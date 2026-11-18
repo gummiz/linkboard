@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
+import type { AppState, RevisionedState } from "../src/model";
 import { parseState } from "../src/storage";
 import { readStateFile, writeStateFile } from "./stateFile";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
+const EMPTY_STORED_STATE: RevisionedState<null> = { revision: 0, state: null };
 
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -45,11 +47,11 @@ export function createLinkboardServer({ dataDir, distDir: distDirOption }: Optio
 
   async function handleGetState(response: http.ServerResponse) {
     const stored = await readStateFile(dataDir);
-    sendJson(response, 200, stored ?? { revision: 0, state: null });
+    sendJson(response, 200, stored ?? EMPTY_STORED_STATE);
   }
 
-  async function applyPut(response: http.ServerResponse, baseRevision: number, state: NonNullable<ReturnType<typeof parseState>>) {
-    const current = (await readStateFile(dataDir)) ?? { revision: 0, state: null };
+  async function applyPut(response: http.ServerResponse, baseRevision: number, state: AppState) {
+    const current = (await readStateFile(dataDir)) ?? EMPTY_STORED_STATE;
     if (baseRevision !== current.revision) {
       sendJson(response, 409, current);
       return;

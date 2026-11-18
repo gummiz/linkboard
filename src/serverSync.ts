@@ -1,15 +1,13 @@
-import { sampleState, type AppState } from "./model";
+import { sampleState, type AppState, type RevisionedState } from "./model";
 import { parseState } from "./storage";
 import { reducer, type Action } from "./store";
 
 const STATE_API_URL = "/api/state";
 const SERVER_FETCH_TIMEOUT_MS = 5000;
 
-export type ServerSnapshot = { revision: number; state: AppState | null };
-
 export type SaveResult =
   | { kind: "saved"; revision: number }
-  | { kind: "conflict"; revision: number; state: AppState }
+  | ({ kind: "conflict" } & RevisionedState)
   | { kind: "unreachable" };
 
 export type FirstContact =
@@ -25,7 +23,7 @@ function isValidRevision(value: unknown): value is number {
  * Returns null only when there is no server to talk to (network error, or a non-JSON answer such as the Vite dev server's index.html).
  * Throws when a server is there but misbehaves: timeout, non-2xx from a JSON server, or JSON of the wrong shape.
  */
-export async function fetchServerState(): Promise<ServerSnapshot | null> {
+export async function fetchServerState(): Promise<RevisionedState<AppState | null> | null> {
   let response: Response;
   try {
     response = await fetch(STATE_API_URL, { signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS) });

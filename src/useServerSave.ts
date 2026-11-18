@@ -10,6 +10,8 @@ import {
 import type { Action } from "./store";
 
 const SAVE_DEBOUNCE_MILLISECONDS = 300;
+// The first conflict is retried by replaying pending edits on the file state; a second one in a row gives up.
+const CONFLICTS_BEFORE_GIVING_UP = 2;
 
 type UseServerSaveOptions = {
   enabled: boolean;
@@ -73,7 +75,7 @@ export function useServerSave(options: UseServerSaveOptions): {
     }
     const localActiveBoardId = stateToSave.activeBoardId;
     consecutiveConflicts.current += 1;
-    if (consecutiveConflicts.current === 1) {
+    if (consecutiveConflicts.current < CONFLICTS_BEFORE_GIVING_UP) {
       // The state change from replaceState re-triggers the debounced save.
       replaceState(adoptState(replayPending(result.state, pendingActions.current), localActiveBoardId));
       return;
