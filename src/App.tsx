@@ -1,11 +1,15 @@
 import { useEffect, useReducer, useRef, useState, type ChangeEvent } from "react";
+import type { InitialLoad } from "./bootstrap";
 import { exportBookmarksHtml, importBookmarksHtml } from "./bookmarks";
 import { BoardView } from "./BoardView";
-import { sampleState } from "./model";
+import { ConflictDialog } from "./ConflictDialog";
+import { mergeStates } from "./merge";
 import { SearchBox } from "./SearchBox";
 import { Sidebar } from "./Sidebar";
-import { loadState, parseBoard, parseState, saveState } from "./storage";
-import { activeBoard, reducer } from "./store";
+import { parseBoard, parseState, saveState } from "./storage";
+import { adoptState } from "./serverSync";
+import { activeBoard, reducer, type Action } from "./store";
+import { useServerSave } from "./useServerSave";
 
 function download(filename: string, contents: string, type: string) {
   const url = URL.createObjectURL(new Blob([contents], { type }));
@@ -20,15 +24,31 @@ function plural(count: number, one: string, many = `${one}s`): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
-export function App() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => loadState() ?? sampleState());
+export function App({ initial }: { initial: InitialLoad }) {
+  const [state, dispatch] = useReducer(reducer, initial.state);
+  const [conflict, setConflict] = useState(initial.mode === "server" ? (initial.conflict ?? null) : null);
   const [notice, setNotice] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const board = activeBoard(state);
 
+  const { track, saveImmediately } = useServerSave({
+    enabled: initial.mode === "server" && conflict === null,
+    initialRevision: initial.mode === "server" ? initial.revision : 0,
+    state,
+    replaceState: (replacement) => dispatch({ type: "state/replace", state: replacement }),
+    notify: setNotice,
+  });
+
+  const dispatchAndTrack = (action: Action) => {
+    dispatch(action);
+    track(action);
+  };
+
+  // While the conflict dialog is open, localStorage still holds the browser's own boards.
   useEffect(() => {
+    if (conflict !== null) return;
     if (!saveState(state)) setNotice("This browser is not saving changes (storage is blocked or full).");
-  }, [state]);
+  }, [state, conflict]);
 
   useEffect(() => {
     if (notice === null) return;
@@ -52,7 +72,7 @@ export function App() {
       const restored = parseState(json);
       if (restored !== null) {
         if (window.confirm(`Replace all boards with the ${restored.boards.length} in ${file.name}?`)) {
-          dispatch({ type: "state/replace", state: restored });
+          dispatchAndTrack({ type: "state/replace", state: restored });
         }
         return;
       }
@@ -61,7 +81,7 @@ export function App() {
         setNotice(`${file.name} is not a Linkboard export.`);
         return;
       }
-      dispatch({ type: "board/add", board: { ...sharedBoard, id: crypto.randomUUID() } });
+      dispatchAndTrack({ type: "board/add", board: { ...sharedBoard, id: crypto.randomUUID() } });
       setNotice(`Added board "${sharedBoard.name}".`);
       return;
     }
@@ -70,11 +90,34 @@ export function App() {
       setNotice(`No links found in ${file.name}.`);
       return;
     }
-    for (const board of result.boards) dispatch({ type: "board/add", board });
+    for (const board of result.boards) dispatchAndTrack({ type: "board/add", board });
     setNotice(
       `Imported ${plural(result.imported, "link")} into ${plural(result.boards.length, "board")}` +
         (result.skipped > 0 ? ` (skipped ${result.skipped} non-web links).` : "."),
     );
+  };
+
+  const onMerge = async () => {
+    if (conflict === null) return;
+    const { browser } = conflict;
+    let { file } = conflict;
+    // One retry: another window may have saved between first contact and the merge.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const merged = mergeStates(file, browser);
+      const result = await saveImmediately(merged.state);
+      if (result.kind === "saved") {
+        dispatch({ type: "state/replace", state: adoptState(merged.state, browser.activeBoardId) });
+        setConflict(null);
+        setNotice(`Merged: ${plural(merged.added, "link")} added, ${merged.skipped} already present.`);
+        return;
+      }
+      if (result.kind === "unreachable") {
+        setNotice("Not saved: server unreachable");
+        return;
+      }
+      file = result.state;
+    }
+    setNotice("Not saved: the file kept changing in another window. Try again.");
   };
 
   return (
@@ -84,7 +127,7 @@ export function App() {
           <img src="/favicon.svg" alt="" width={24} height={24} />
           <span>Linkboard</span>
         </div>
-        <SearchBox state={state} dispatch={dispatch} />
+        <SearchBox state={state} dispatch={dispatchAndTrack} />
         <div className="topbar-actions">
           <button type="button" onClick={() => fileInput.current?.click()}>
             Import
@@ -123,10 +166,25 @@ export function App() {
           </details>
         </div>
       </header>
-      <Sidebar state={state} dispatch={dispatch} />
+      <Sidebar state={state} dispatch={dispatchAndTrack} />
       <main className="main">
-        <BoardView board={board} dispatch={dispatch} />
+        <BoardView board={board} dispatch={dispatchAndTrack} />
       </main>
+      {conflict !== null && (
+        <ConflictDialog
+          file={conflict.file}
+          browser={conflict.browser}
+          statusMessage={notice}
+          onUseFile={() => {
+            dispatch({ type: "state/replace", state: conflict.file });
+            setConflict(null);
+          }}
+          onMerge={() => void onMerge()}
+          onDownloadBrowser={() =>
+            download("linkboard-backup.json", JSON.stringify(conflict.browser, null, 2), "application/json")
+          }
+        />
+      )}
       {notice !== null && (
         <div className="notice" role="status">
           {notice}

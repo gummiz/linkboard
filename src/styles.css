@@ -649,3 +649,40 @@ a:focus-visible {
     flex: 1;
   }
 }
+
+.boot-loading {
+  margin: 20vh 0 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.conflict-dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 20px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.conflict-dialog::backdrop {
+  background: rgb(15 23 42 / 0.5);
+}
+
+.conflict-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.conflict-dialog p {
+  margin: 0 0 16px;
+  color: var(--text-muted);
+}
+
+.conflict-dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
