@@ -1,7 +1,10 @@
 services:
   linkboard:
     build: .
-    # Same origin as the dev server, so boards in localStorage stay visible
+    # Bound to localhost only: the server has no authentication, so anyone
+    # on the network could read and change the boards otherwise
     ports:
-      - "5173:80"
+      - "127.0.0.1:5173:8080"
+    volumes:
+      - "./data:/data"
     restart: unless-stopped
