@@ -46,18 +46,47 @@ describe("ConflictDialog", () => {
 
   it("describes what keeping the shared boards discards", () => {
     renderDialog();
-    expect(screen.getByRole("button", { name: "Keep the shared boards" }).getAttribute("aria-describedby")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Keep the shared boards/ }).getAttribute("aria-describedby")).toBeTruthy();
     expect(screen.getByText(/This browser's 3 links are discarded\./)).toBeTruthy();
   });
 
   it("calls the matching handler for each button", () => {
     const handlers = renderDialog();
     fireEvent.click(screen.getByRole("button", { name: "Save a backup of this browser's boards first" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep the shared boards" }));
-    fireEvent.click(screen.getByRole("button", { name: "Add this browser's links" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Keep the shared boards/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Add this browser's links/ }));
     expect(handlers.onDownloadBrowser).toHaveBeenCalledTimes(1);
     expect(handlers.onUseFile).toHaveBeenCalledTimes(1);
     expect(handlers.onMerge).toHaveBeenCalledTimes(1);
+  });
+
+  it("labels the shared and the browser counts", () => {
+    renderDialog();
+    expect(screen.getByText("Shared").tagName).toBe("DT");
+    expect(screen.getByText("In this browser").tagName).toBe("DT");
+    expect(screen.queryByText("Only in this browser")).toBeNull();
+  });
+
+  it("returns focus to the previously focused element on close", () => {
+    const opener = document.createElement("button");
+    document.body.append(opener);
+    opener.focus();
+    const handlers = { onUseFile: vi.fn(), onMerge: vi.fn(), onDownloadBrowser: vi.fn() };
+    const { unmount } = render(<ConflictDialog file={stateWithLinks(1, 1)} browser={stateWithLinks(1, 1)} {...handlers} />);
+    expect(document.activeElement).not.toBe(opener);
+    unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it("does not crash when the previously focused element is gone", () => {
+    const opener = document.createElement("button");
+    document.body.append(opener);
+    opener.focus();
+    const handlers = { onUseFile: vi.fn(), onMerge: vi.fn(), onDownloadBrowser: vi.fn() };
+    const { unmount } = render(<ConflictDialog file={stateWithLinks(1, 1)} browser={stateWithLinks(1, 1)} {...handlers} />);
+    opener.remove();
+    expect(() => unmount()).not.toThrow();
   });
 
   it("prevents Escape from dismissing the dialog", () => {

@@ -7,6 +7,7 @@ import { mergeStates } from "./merge";
 import type { AppState } from "./model";
 import { SearchBox } from "./SearchBox";
 import { Sidebar } from "./Sidebar";
+import { pluralize } from "./pluralize";
 import { parseBoard, parseState, saveState } from "./storage";
 import { adoptState } from "./serverSync";
 import { activeBoard, reducer, type Action } from "./store";
@@ -19,10 +20,6 @@ function download(filename: string, contents: string, type: string) {
   link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
-}
-
-function plural(count: number, one: string, many = `${one}s`): string {
-  return `${count} ${count === 1 ? one : many}`;
 }
 
 export function App({ initial }: { initial: InitialLoad }) {
@@ -94,7 +91,7 @@ export function App({ initial }: { initial: InitialLoad }) {
     }
     for (const board of result.boards) dispatchAndTrack({ type: "board/add", board });
     setNotice(
-      `Imported ${plural(result.imported, "link")} into ${plural(result.boards.length, "board")}` +
+      `Imported ${pluralize(result.imported, "link")} into ${pluralize(result.boards.length, "board")}` +
         (result.skipped > 0 ? ` (skipped ${result.skipped} non-web links).` : "."),
     );
   };
@@ -121,7 +118,7 @@ export function App({ initial }: { initial: InitialLoad }) {
       if (result.kind === "saved") {
         dispatch({ type: "state/replace", state: adoptState(merged.state, browser.activeBoardId) });
         setConflict(null);
-        setNotice(`Added ${plural(merged.added, "link")} to the shared boards (${merged.skipped} already there).`);
+        setNotice(`Added ${pluralize(merged.added, "link")} to the shared boards (${merged.skipped} already there).`);
         return;
       }
       if (result.kind === "unreachable") {

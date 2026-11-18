@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import type { AppState } from "./model";
+import { pluralize } from "./pluralize";
 
 type ConflictDialogProps = {
   file: AppState;
@@ -18,10 +19,6 @@ function countContents(state: AppState) {
     0,
   );
   return { boardCount: state.boards.length, linkCount };
-}
-
-function pluralize(count: number, singular: string): string {
-  return `${count.toLocaleString("en")} ${count === 1 ? singular : `${singular}s`}`;
 }
 
 function describeContents(state: AppState): string {
@@ -45,10 +42,17 @@ export function ConflictDialog({
   const addDescriptionId = useId();
   const browserLinkCount = countContents(browser).linkCount;
 
+  // Read during render: autoFocus on a child moves focus before any effect runs.
+  const elementFocusedBeforeOpen = useRef(document.activeElement);
+
   useEffect(() => {
     const dialog = dialogRef.current!;
     // StrictMode runs this effect twice; showModal() on an open dialog can throw.
     if (!dialog.open) dialog.showModal();
+    return () => {
+      const previous = elementFocusedBeforeOpen.current;
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
   }, []);
 
   return (
@@ -68,7 +72,7 @@ export function ConflictDialog({
       <dl className="conflict-dialog-counts">
         <dt>Shared</dt>
         <dd>{describeContents(file)}</dd>
-        <dt>Only in this browser</dt>
+        <dt>In this browser</dt>
         <dd>{describeContents(browser)}</dd>
       </dl>
       <div className="conflict-dialog-choices">
