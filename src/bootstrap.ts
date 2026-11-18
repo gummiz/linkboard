@@ -1,9 +1,9 @@
 import { sampleState, type AppState } from "./model";
-import { decideFirstContact, adoptState, fetchServerState, putServerState } from "./serverSync";
+import { adoptState, decideFirstContact, fetchServerState, putServerState, type SaveResult } from "./serverSync";
 import { loadState } from "./storage";
 
 export type InitialLoad =
-  | { mode: "local"; state: AppState }
+  | { mode: "local"; state: AppState; notice?: string }
   | {
       mode: "server";
       revision: number;
@@ -33,10 +33,17 @@ export async function loadInitialState(): Promise<InitialLoad> {
         conflict: { file: firstContact.file, browser: firstContact.browser },
       };
     }
-    const result = await putServerState(revision, firstContact.state);
+    let result: SaveResult;
+    try {
+      result = await putServerState(revision, firstContact.state);
+    } catch (error) {
+      // A server error must not leave the app on "Loading…": run like local mode and say so.
+      return { mode: "local", state: firstContact.state, notice: `Not saved: ${(error as Error).message}` };
+    }
     if (result.kind === "saved") return { mode: "server", revision: result.revision, state: firstContact.state };
-    // Server went away between GET and PUT: nothing was saved, so run like local mode.
-    if (result.kind === "unreachable") return { mode: "local", state: firstContact.state };
+    if (result.kind === "unreachable") {
+      return { mode: "local", state: firstContact.state, notice: "Not saved: server unreachable" };
+    }
     fileState = result.state;
     revision = result.revision;
   }

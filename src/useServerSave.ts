@@ -52,6 +52,9 @@ export function useServerSave(options: UseServerSaveOptions): {
     let result: SaveResult;
     try {
       result = await saveImmediately(stateToSave);
+    } catch (error) {
+      notify(`Not saved: ${(error as Error).message}`);
+      return;
     } finally {
       saveInFlight.current = false;
     }
@@ -64,6 +67,7 @@ export function useServerSave(options: UseServerSaveOptions): {
       return;
     }
     if (result.kind === "unreachable") {
+      consecutiveConflicts.current = 0;
       notify("Not saved: server unreachable");
       return;
     }

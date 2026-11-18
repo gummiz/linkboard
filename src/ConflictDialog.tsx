@@ -5,6 +5,7 @@ type ConflictDialogProps = {
   file: AppState;
   browser: AppState;
   statusMessage?: string | null;
+  busy?: boolean;
   onUseFile(): void;
   onMerge(): void;
   onDownloadBrowser(): void;
@@ -25,6 +26,7 @@ export function ConflictDialog({
   file,
   browser,
   statusMessage = null,
+  busy = false,
   onUseFile,
   onMerge,
   onDownloadBrowser,
@@ -55,10 +57,10 @@ export function ConflictDialog({
       </button>
       {statusMessage !== null && <p role="status">{statusMessage}</p>}
       <div className="conflict-dialog-actions">
-        <button type="button" onClick={onUseFile}>
+        <button type="button" disabled={busy} onClick={onUseFile}>
           Use the file
         </button>
-        <button type="button" className="primary" onClick={onMerge}>
+        <button type="button" className="primary" disabled={busy} onClick={onMerge}>
           Merge into the file
         </button>
       </div>

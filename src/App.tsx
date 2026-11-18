@@ -4,6 +4,7 @@ import { exportBookmarksHtml, importBookmarksHtml } from "./bookmarks";
 import { BoardView } from "./BoardView";
 import { ConflictDialog } from "./ConflictDialog";
 import { mergeStates } from "./merge";
+import type { AppState } from "./model";
 import { SearchBox } from "./SearchBox";
 import { Sidebar } from "./Sidebar";
 import { parseBoard, parseState, saveState } from "./storage";
@@ -27,7 +28,8 @@ function plural(count: number, one: string, many = `${one}s`): string {
 export function App({ initial }: { initial: InitialLoad }) {
   const [state, dispatch] = useReducer(reducer, initial.state);
   const [conflict, setConflict] = useState(initial.mode === "server" ? (initial.conflict ?? null) : null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(initial.mode === "local" ? (initial.notice ?? null) : null);
+  const [mergeInFlight, setMergeInFlight] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const board = activeBoard(state);
 
@@ -98,7 +100,18 @@ export function App({ initial }: { initial: InitialLoad }) {
   };
 
   const onMerge = async () => {
-    if (conflict === null) return;
+    if (conflict === null || mergeInFlight) return;
+    setMergeInFlight(true);
+    try {
+      await mergeIntoFile(conflict);
+    } catch (error) {
+      setNotice(`Not saved: ${(error as Error).message}`);
+    } finally {
+      setMergeInFlight(false);
+    }
+  };
+
+  const mergeIntoFile = async (conflict: { file: AppState; browser: AppState }) => {
     const { browser } = conflict;
     let { file } = conflict;
     // One retry: another window may have saved between first contact and the merge.
@@ -175,8 +188,9 @@ export function App({ initial }: { initial: InitialLoad }) {
           file={conflict.file}
           browser={conflict.browser}
           statusMessage={notice}
+          busy={mergeInFlight}
           onUseFile={() => {
-            dispatch({ type: "state/replace", state: conflict.file });
+            dispatch({ type: "state/replace", state: adoptState(conflict.file, conflict.browser.activeBoardId) });
             setConflict(null);
           }}
           onMerge={() => void onMerge()}
