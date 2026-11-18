@@ -9,13 +9,19 @@ import { sampleState } from "../src/model";
 import { createLinkboardServer } from "./server";
 
 let dataDir: string;
+let rootDir: string;
 let distDir: string;
 let server: Server;
 let baseUrl: string;
 
 beforeEach(async () => {
   dataDir = await mkdtemp(path.join(tmpdir(), "linkboard-data-"));
-  distDir = await mkdtemp(path.join(tmpdir(), "linkboard-dist-"));
+  rootDir = await mkdtemp(path.join(tmpdir(), "linkboard-root-"));
+  distDir = path.join(rootDir, "dist");
+  await mkdir(distDir);
+  await writeFile(path.join(rootDir, "secret.txt"), "secret");
+  await mkdir(path.join(rootDir, "dist-evil"));
+  await writeFile(path.join(rootDir, "dist-evil", "x"), "secret");
   await writeFile(path.join(distDir, "index.html"), "<p>app</p>");
   await mkdir(path.join(distDir, "assets"));
   await writeFile(path.join(distDir, "assets", "a.js"), "console.log(1)");
@@ -27,7 +33,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await new Promise((resolve) => server.close(resolve));
   await rm(dataDir, { recursive: true, force: true });
-  await rm(distDir, { recursive: true, force: true });
+  await rm(rootDir, { recursive: true, force: true });
 });
 
 function putState(baseRevision: unknown, state: unknown) {
@@ -113,10 +119,11 @@ describe("static files", () => {
   });
 
   it("does not serve files outside dist", async () => {
-    const packageJson = await readFile("package.json", "utf8");
-    for (const url of ["/../package.json", "/%2e%2e/package.json"]) {
+    // Encoded slashes stay intact on the wire and become "../" only after decodeURIComponent.
+    for (const url of ["/%2e%2e%2fsecret.txt", "/..%2fsecret.txt", "/..%2fdist-evil%2fx"]) {
       const response = await fetch(`${baseUrl}${url}`);
-      expect(await response.text()).not.toBe(packageJson);
+      expect(response.status, url).toBe(404);
+      expect(await response.text(), url).not.toBe("secret");
     }
   });
 });
