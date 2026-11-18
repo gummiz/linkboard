@@ -39,15 +39,22 @@ function renderDialog() {
 describe("ConflictDialog", () => {
   it("shows the title and the board and link counts", () => {
     renderDialog();
-    expect(screen.getByRole("dialog", { name: "Your browser's boards differ from the saved file" })).toBeTruthy();
-    expect(screen.getByText("Browser: 3 boards, 3 links · File: 5 boards, 10 links")).toBeTruthy();
+    expect(screen.getByRole("dialog", { name: "This browser has its own boards" })).toBeTruthy();
+    expect(screen.getByText("5 boards · 10 links")).toBeTruthy();
+    expect(screen.getByText("3 boards · 3 links")).toBeTruthy();
+  });
+
+  it("describes what keeping the shared boards discards", () => {
+    renderDialog();
+    expect(screen.getByRole("button", { name: "Keep the shared boards" }).getAttribute("aria-describedby")).toBeTruthy();
+    expect(screen.getByText(/This browser's 3 links are discarded\./)).toBeTruthy();
   });
 
   it("calls the matching handler for each button", () => {
     const handlers = renderDialog();
-    fireEvent.click(screen.getByRole("button", { name: "Download browser boards as backup" }));
-    fireEvent.click(screen.getByRole("button", { name: "Use the file" }));
-    fireEvent.click(screen.getByRole("button", { name: "Merge into the file" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save a backup of this browser's boards first" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep the shared boards" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add this browser's links" }));
     expect(handlers.onDownloadBrowser).toHaveBeenCalledTimes(1);
     expect(handlers.onUseFile).toHaveBeenCalledTimes(1);
     expect(handlers.onMerge).toHaveBeenCalledTimes(1);

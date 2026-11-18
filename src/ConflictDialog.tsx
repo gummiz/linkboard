@@ -11,15 +11,22 @@ type ConflictDialogProps = {
   onDownloadBrowser(): void;
 };
 
-function describeContents(state: AppState): string {
+function countContents(state: AppState) {
   const linkCount = state.boards.reduce(
     (boardTotal, board) =>
       boardTotal + board.categories.reduce((categoryTotal, category) => categoryTotal + category.items.length, 0),
     0,
   );
-  const boardLabel = state.boards.length === 1 ? "board" : "boards";
-  const linkLabel = linkCount === 1 ? "link" : "links";
-  return `${state.boards.length} ${boardLabel}, ${linkCount} ${linkLabel}`;
+  return { boardCount: state.boards.length, linkCount };
+}
+
+function pluralize(count: number, singular: string): string {
+  return `${count.toLocaleString("en")} ${count === 1 ? singular : `${singular}s`}`;
+}
+
+function describeContents(state: AppState): string {
+  const { boardCount, linkCount } = countContents(state);
+  return `${pluralize(boardCount, "board")} · ${pluralize(linkCount, "link")}`;
 }
 
 export function ConflictDialog({
@@ -33,6 +40,10 @@ export function ConflictDialog({
 }: ConflictDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const introId = useId();
+  const keepDescriptionId = useId();
+  const addDescriptionId = useId();
+  const browserLinkCount = countContents(browser).linkCount;
 
   useEffect(() => {
     const dialog = dialogRef.current!;
@@ -45,25 +56,62 @@ export function ConflictDialog({
       ref={dialogRef}
       className="conflict-dialog"
       aria-labelledby={titleId}
+      aria-describedby={introId}
       // Esc must not dismiss an undecided state.
       onCancel={(event) => event.preventDefault()}
     >
-      <h2 id={titleId}>Your browser's boards differ from the saved file</h2>
-      <p>
-        Browser: {describeContents(browser)} · File: {describeContents(file)}
+      <h2 id={titleId}>This browser has its own boards</h2>
+      <p id={introId} className="conflict-dialog-intro">
+        Linkboard now keeps one shared copy of your boards for all your browsers. This browser still has an older copy
+        of its own.
       </p>
-      <button type="button" onClick={onDownloadBrowser}>
-        Download browser boards as backup
-      </button>
-      {statusMessage !== null && <p role="status">{statusMessage}</p>}
-      <div className="conflict-dialog-actions">
-        <button type="button" disabled={busy} onClick={onUseFile}>
-          Use the file
+      <dl className="conflict-dialog-counts">
+        <dt>Shared</dt>
+        <dd>{describeContents(file)}</dd>
+        <dt>Only in this browser</dt>
+        <dd>{describeContents(browser)}</dd>
+      </dl>
+      <div className="conflict-dialog-choices">
+        <button
+          type="button"
+          className="conflict-choice"
+          autoFocus
+          aria-label="Keep the shared boards"
+          aria-describedby={keepDescriptionId}
+          disabled={busy}
+          onClick={onUseFile}
+        >
+          <span className="conflict-choice-title">Keep the shared boards</span>
+          <span id={keepDescriptionId} className="conflict-choice-text">
+            This browser's {browserLinkCount === 0 ? "boards" : pluralize(browserLinkCount, "link")} are discarded. The
+            shared boards stay as they are.
+          </span>
         </button>
-        <button type="button" className="primary" disabled={busy} onClick={onMerge}>
-          Merge into the file
+        <button
+          type="button"
+          className="conflict-choice"
+          aria-label="Add this browser's links"
+          aria-describedby={addDescriptionId}
+          disabled={busy}
+          onClick={onMerge}
+        >
+          <span className="conflict-choice-title">Add this browser's links</span>
+          <span id={addDescriptionId} className="conflict-choice-text">
+            Links that aren't in the shared boards yet are added. Nothing is deleted or doubled.
+          </span>
         </button>
       </div>
+      {statusMessage !== null && (
+        <p role="status" className="conflict-dialog-status">
+          {statusMessage}
+        </p>
+      )}
+      <p className="conflict-dialog-backup">
+        Unsure?{" "}
+        <button type="button" className="link-button" onClick={onDownloadBrowser}>
+          Save a backup of this browser's boards first
+        </button>
+      </p>
     </dialog>
   );
 }

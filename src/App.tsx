@@ -121,7 +121,7 @@ export function App({ initial }: { initial: InitialLoad }) {
       if (result.kind === "saved") {
         dispatch({ type: "state/replace", state: adoptState(merged.state, browser.activeBoardId) });
         setConflict(null);
-        setNotice(`Merged: ${plural(merged.added, "link")} added, ${merged.skipped} already present.`);
+        setNotice(`Added ${plural(merged.added, "link")} to the shared boards (${merged.skipped} already there).`);
         return;
       }
       if (result.kind === "unreachable") {
