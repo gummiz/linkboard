@@ -98,6 +98,11 @@ export function createLinkboardServer({ dataDir, distDir: distDirOption }: Optio
     try {
       content = await readFile(filePath);
     } catch {
+      // Only extensionless paths are SPA routes; a missing /assets/x.js must not answer with HTML.
+      if (path.extname(filePath) !== "") {
+        response.writeHead(404).end();
+        return;
+      }
       servedPath = path.join(distDir, "index.html");
       content = await readFile(servedPath);
     }

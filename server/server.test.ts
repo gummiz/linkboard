@@ -118,6 +118,18 @@ describe("static files", () => {
     expect(await (await fetch(`${baseUrl}/`)).text()).toBe("<p>app</p>");
   });
 
+  it("returns 404 for a missing path with a file extension", async () => {
+    for (const url of ["/assets/missing.js", "/favicon.ico"]) {
+      expect((await fetch(`${baseUrl}${url}`)).status, url).toBe(404);
+    }
+  });
+
+  it("falls back to index.html with 200 for extensionless routes", async () => {
+    const response = await fetch(`${baseUrl}/board/x`);
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("<p>app</p>");
+  });
+
   it("does not serve files outside dist", async () => {
     // Encoded slashes stay intact on the wire and become "../" only after decodeURIComponent.
     for (const url of ["/%2e%2e%2fsecret.txt", "/..%2fsecret.txt", "/..%2fdist-evil%2fx"]) {
