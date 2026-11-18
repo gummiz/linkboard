@@ -98,9 +98,11 @@ export function useServerSave(options: UseServerSaveOptions): {
         void savePending();
         return;
       }
-      const snapshot = await fetchServerState();
-      if (snapshot !== null && "error" in snapshot) {
-        latestOptions.current.notify(`Not saved: server error (${snapshot.error})`);
+      let snapshot;
+      try {
+        snapshot = await fetchServerState();
+      } catch (error) {
+        latestOptions.current.notify(`Not saved: server error (${(error as Error).message})`);
         return;
       }
       // Re-check after the await: an edit or save may have started meanwhile.

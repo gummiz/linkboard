@@ -14,9 +14,6 @@ export type InitialLoad =
 export async function loadInitialState(): Promise<InitialLoad> {
   const browserState = loadState();
   const snapshot = await fetchServerState();
-  if (snapshot !== null && "error" in snapshot) {
-    return { mode: "local", state: browserState ?? sampleState(), notice: `Not saved: server error (${snapshot.error})` };
-  }
   if (snapshot === null) return { mode: "local", state: browserState ?? sampleState() };
 
   // An upload can hit a 409 once; the retry always sees a file with data, so it never uploads again.

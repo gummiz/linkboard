@@ -43,33 +43,38 @@ describe("fetchServerState", () => {
     expect(await fetchServerState()).toBeNull();
   });
 
-  it("returns null on non-2xx below 500", async () => {
-    mockFetch(() => Promise.resolve(jsonResponse({ revision: 0, state: null }, 404)));
-    expect(await fetchServerState()).toBeNull();
-  });
-
-  it("returns the error message on a JSON 500", async () => {
-    mockFetch(() => Promise.resolve(jsonResponse({ error: "data file is corrupt" }, 500)));
-    expect(await fetchServerState()).toEqual({ error: "data file is corrupt" });
-  });
-
   it("returns null on a 500 with HTML", async () => {
     mockFetch(() => Promise.resolve(jsonResponse("<html>oops</html>", 500, "text/html")));
     expect(await fetchServerState()).toBeNull();
   });
 
-  it("returns null on wrong shape", async () => {
+  it("throws the server's message on a JSON 500", async () => {
+    mockFetch(() => Promise.resolve(jsonResponse({ error: "data file is corrupt" }, 500)));
+    await expect(fetchServerState()).rejects.toThrow("data file is corrupt");
+  });
+
+  it("throws with the status on a JSON non-2xx without message", async () => {
+    mockFetch(() => Promise.resolve(jsonResponse({ revision: 0, state: null }, 404)));
+    await expect(fetchServerState()).rejects.toThrow("status 404");
+  });
+
+  it("throws on wrong shape", async () => {
     mockFetch(() => Promise.resolve(jsonResponse({ revision: -1, state: null })));
-    expect(await fetchServerState()).toBeNull();
+    await expect(fetchServerState()).rejects.toThrow("invalid revision");
     mockFetch(() => Promise.resolve(jsonResponse({ revision: 1, state: { nope: true } })));
-    expect(await fetchServerState()).toBeNull();
+    await expect(fetchServerState()).rejects.toThrow("invalid state");
+  });
+
+  it("throws on timeout", async () => {
+    mockFetch(() => Promise.reject(new DOMException("timed out", "TimeoutError")));
+    await expect(fetchServerState()).rejects.toThrow("did not answer");
   });
 
   it("returns snapshot on valid JSON", async () => {
     const state = sampleState();
     const fetchMock = mockFetch(() => Promise.resolve(jsonResponse({ revision: 3, state })));
     expect(await fetchServerState()).toEqual({ revision: 3, state });
-    expect(fetchMock).toHaveBeenCalledWith("/api/state");
+    expect(fetchMock).toHaveBeenCalledWith("/api/state", { signal: expect.any(AbortSignal) });
   });
 
   it("returns snapshot with null state for an empty server", async () => {

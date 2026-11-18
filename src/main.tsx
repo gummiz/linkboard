@@ -4,10 +4,20 @@ import { App } from "./App";
 import { loadInitialState } from "./bootstrap";
 import "./styles.css";
 
-const initial = await loadInitialState();
+const root = createRoot(document.getElementById("root")!);
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App initial={initial} />
-  </StrictMode>,
-);
+try {
+  const initial = await loadInitialState();
+  root.render(
+    <StrictMode>
+      <App initial={initial} />
+    </StrictMode>,
+  );
+} catch (error) {
+  // No silent fallback to local mode: a broken server must be visible.
+  root.render(
+    <div className="notice" role="alert">
+      Could not load data from the server: {(error as Error).message}
+    </div>,
+  );
+}

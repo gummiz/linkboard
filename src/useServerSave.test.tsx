@@ -121,7 +121,7 @@ describe("useServerSave", () => {
 
 describe("useServerSave focus refresh", () => {
   it("notifies when the server reports a data error", async () => {
-    vi.mocked(fetchServerState).mockResolvedValue({ error: "data file is corrupt" });
+    vi.mocked(fetchServerState).mockRejectedValue(new Error("data file is corrupt"));
     const notify = vi.fn();
     renderHook(() =>
       useServerSave({ enabled: true, initialRevision: 3, state: localState, replaceState: vi.fn(), notify }),

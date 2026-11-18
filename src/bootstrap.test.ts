@@ -8,10 +8,8 @@ vi.mock("./serverSync", async (importOriginal) => ({
 }));
 
 describe("loadInitialState", () => {
-  it("runs in local mode with a notice when the server reports a data error", async () => {
-    vi.mocked(fetchServerState).mockResolvedValue({ error: "data file is corrupt" });
-    const result = await loadInitialState();
-    expect(result.mode).toBe("local");
-    expect(result).toMatchObject({ notice: "Not saved: server error (data file is corrupt)" });
+  it("lets a server error propagate instead of falling back to local mode", async () => {
+    vi.mocked(fetchServerState).mockRejectedValue(new Error("data file is corrupt"));
+    await expect(loadInitialState()).rejects.toThrow("data file is corrupt");
   });
 });

@@ -3,6 +3,7 @@ import { parseState } from "./storage";
 import { reducer, type Action } from "./store";
 
 const STATE_API_URL = "/api/state";
+const SERVER_FETCH_TIMEOUT_MS = 5000;
 
 export type ServerSnapshot = { revision: number; state: AppState | null };
 
@@ -20,32 +21,34 @@ function isValidRevision(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-export type ServerError = { error: string };
-
 /**
- * Returns null whenever server mode is unavailable (network error, non-JSON, other non-2xx, wrong shape).
- * A JSON 5xx means the server is there but cannot serve the data (e.g. corrupt file): returned as ServerError.
+ * Returns null only when there is no server to talk to (network error, or a non-JSON answer such as the Vite dev server's index.html).
+ * Throws when a server is there but misbehaves: timeout, non-2xx from a JSON server, or JSON of the wrong shape.
  */
-export async function fetchServerState(): Promise<ServerSnapshot | ServerError | null> {
+export async function fetchServerState(): Promise<ServerSnapshot | null> {
+  let response: Response;
   try {
-    const response = await fetch(STATE_API_URL);
-    // The Vite dev server answers unknown paths with 200 text/html.
-    if (!response.headers.get("content-type")?.includes("application/json")) return null;
-    const body: unknown = await response.json();
-    if (response.status >= 500) {
-      const message = (body as { error?: unknown } | null)?.error;
-      return { error: typeof message === "string" ? message : `HTTP ${response.status}` };
+    response = await fetch(STATE_API_URL, { signal: AbortSignal.timeout(SERVER_FETCH_TIMEOUT_MS) });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "TimeoutError") {
+      throw new Error(`Server did not answer within ${SERVER_FETCH_TIMEOUT_MS} ms`);
     }
-    if (!response.ok) return null;
-    if (typeof body !== "object" || body === null) return null;
-    const { revision, state } = body as { revision?: unknown; state?: unknown };
-    if (!isValidRevision(revision)) return null;
-    if (state === null) return { revision, state: null };
-    const parsedState = parseState(state);
-    return parsedState === null ? null : { revision, state: parsedState };
-  } catch {
     return null;
   }
+  // The Vite dev server answers unknown paths with 200 text/html.
+  if (!response.headers.get("content-type")?.includes("application/json")) return null;
+  const body: unknown = await response.json();
+  if (!response.ok) {
+    const message = (body as { error?: unknown } | null)?.error;
+    throw new Error(typeof message === "string" ? message : `GET ${STATE_API_URL} failed with status ${response.status}`);
+  }
+  if (typeof body !== "object" || body === null) throw new Error("Server state response is not an object");
+  const { revision, state } = body as { revision?: unknown; state?: unknown };
+  if (!isValidRevision(revision)) throw new Error("Server state response has an invalid revision");
+  if (state === null) return { revision, state: null };
+  const parsedState = parseState(state);
+  if (parsedState === null) throw new Error("Server state response has an invalid state");
+  return { revision, state: parsedState };
 }
 
 /** Network failure is "unreachable"; any unexpected status throws (client bug, fail loud). */
