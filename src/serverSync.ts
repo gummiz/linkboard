@@ -20,14 +20,23 @@ function isValidRevision(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-/** Returns null whenever server mode is unavailable (network error, non-2xx, non-JSON, wrong shape). */
-export async function fetchServerState(): Promise<ServerSnapshot | null> {
+export type ServerError = { error: string };
+
+/**
+ * Returns null whenever server mode is unavailable (network error, non-JSON, other non-2xx, wrong shape).
+ * A JSON 5xx means the server is there but cannot serve the data (e.g. corrupt file): returned as ServerError.
+ */
+export async function fetchServerState(): Promise<ServerSnapshot | ServerError | null> {
   try {
     const response = await fetch(STATE_API_URL);
-    if (!response.ok) return null;
     // The Vite dev server answers unknown paths with 200 text/html.
     if (!response.headers.get("content-type")?.includes("application/json")) return null;
     const body: unknown = await response.json();
+    if (response.status >= 500) {
+      const message = (body as { error?: unknown } | null)?.error;
+      return { error: typeof message === "string" ? message : `HTTP ${response.status}` };
+    }
+    if (!response.ok) return null;
     if (typeof body !== "object" || body === null) return null;
     const { revision, state } = body as { revision?: unknown; state?: unknown };
     if (!isValidRevision(revision)) return null;

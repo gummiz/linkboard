@@ -43,8 +43,18 @@ describe("fetchServerState", () => {
     expect(await fetchServerState()).toBeNull();
   });
 
-  it("returns null on non-2xx", async () => {
-    mockFetch(() => Promise.resolve(jsonResponse({ revision: 0, state: null }, 500)));
+  it("returns null on non-2xx below 500", async () => {
+    mockFetch(() => Promise.resolve(jsonResponse({ revision: 0, state: null }, 404)));
+    expect(await fetchServerState()).toBeNull();
+  });
+
+  it("returns the error message on a JSON 500", async () => {
+    mockFetch(() => Promise.resolve(jsonResponse({ error: "data file is corrupt" }, 500)));
+    expect(await fetchServerState()).toEqual({ error: "data file is corrupt" });
+  });
+
+  it("returns null on a 500 with HTML", async () => {
+    mockFetch(() => Promise.resolve(jsonResponse("<html>oops</html>", 500, "text/html")));
     expect(await fetchServerState()).toBeNull();
   });
 

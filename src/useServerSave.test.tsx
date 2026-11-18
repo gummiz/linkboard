@@ -1,7 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { makeBoard, type AppState } from "./model";
-import { putServerState } from "./serverSync";
+import { fetchServerState, putServerState } from "./serverSync";
 import type { Action } from "./store";
 import { useServerSave } from "./useServerSave";
 
@@ -116,5 +116,20 @@ describe("useServerSave", () => {
     hook.rerender({ state: { ...renamedState } });
     await advance(300);
     expect(putServerStateMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("useServerSave focus refresh", () => {
+  it("notifies when the server reports a data error", async () => {
+    vi.mocked(fetchServerState).mockResolvedValue({ error: "data file is corrupt" });
+    const notify = vi.fn();
+    renderHook(() =>
+      useServerSave({ enabled: true, initialRevision: 3, state: localState, replaceState: vi.fn(), notify }),
+    );
+
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(notify).toHaveBeenCalledWith("Not saved: server error (data file is corrupt)");
   });
 });

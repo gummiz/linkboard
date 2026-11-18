@@ -70,7 +70,9 @@ Rerun the first command after code changes. Back up by copying
 `data/linkboard.json`.
 
 The port is bound to `127.0.0.1` only. There is no login, so don't publish it
-to your network.
+to your network. `npm start` outside Docker listens on all interfaces, also
+without a login, so run it only on a trusted machine (or use the compose file,
+which binds to `127.0.0.1`).
 
 Boards already in a browser's `localStorage` move into the file automatically
 the first time you open the app. If the browser and the file both hold
