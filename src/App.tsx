@@ -40,7 +40,8 @@ export function App({ initial }: { initial: InitialLoad }) {
 
   const dispatchAndTrack = (action: Action) => {
     dispatch(action);
-    track(action);
+    // Only edits that change something are replayed; a no-op replay then reliably means "target gone".
+    if (reducer(state, action) !== state) track(action);
   };
 
   // While the conflict dialog is open, localStorage still holds the browser's own boards.

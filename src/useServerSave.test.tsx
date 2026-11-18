@@ -76,6 +76,24 @@ describe("useServerSave", () => {
     expect(putServerStateMock).toHaveBeenLastCalledWith(7, replayedState);
   });
 
+  it("notifies when a replayed action's target is gone in the file state", async () => {
+    const fileWithoutBoard: AppState = { ...fileState, boards: [makeBoard("Other")] };
+    fileWithoutBoard.activeBoardId = fileWithoutBoard.boards[0]!.id;
+    putServerStateMock.mockResolvedValueOnce({ kind: "conflict", revision: 7, state: fileWithoutBoard });
+    const { replaceState, notify } = setup();
+    await advance(300);
+
+    expect(replaceState).toHaveBeenCalledTimes(1);
+    expect(notify).toHaveBeenCalledWith("Reloaded changes from another window; your last edit was not saved.");
+  });
+
+  it("does not notify when the replay applies cleanly", async () => {
+    putServerStateMock.mockResolvedValueOnce({ kind: "conflict", revision: 7, state: fileState });
+    const { notify } = setup();
+    await advance(300);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
   it("adopts the file state and notifies after two consecutive conflicts", async () => {
     putServerStateMock
       .mockResolvedValueOnce({ kind: "conflict", revision: 7, state: fileState })

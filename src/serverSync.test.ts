@@ -159,7 +159,19 @@ describe("replayPending", () => {
       { type: "item/add", boardId: board.id, categoryId: board.categories[0]!.id, item },
     ];
     const result = replayPending(fileState, pending);
-    expect(result.boards[0]!.categories[0]!.items).toEqual([item]);
+    expect(result.state.boards[0]!.categories[0]!.items).toEqual([item]);
+    expect(result.lostActionCount).toBe(0);
+  });
+
+  it("counts an action whose category is gone in the file state as lost", () => {
+    const board = makeBoard("Work", [makeCategory("A", "#000")]);
+    const fileState = stateOf(board);
+    const pending: Action[] = [
+      { type: "item/add", boardId: board.id, categoryId: "deleted", item: makeItem("new", "https://new.example/") },
+    ];
+    const result = replayPending(fileState, pending);
+    expect(result.state).toBe(fileState);
+    expect(result.lostActionCount).toBe(1);
   });
 });
 

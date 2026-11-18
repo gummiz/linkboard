@@ -77,7 +77,11 @@ export function useServerSave(options: UseServerSaveOptions): {
     consecutiveConflicts.current += 1;
     if (consecutiveConflicts.current < CONFLICTS_BEFORE_GIVING_UP) {
       // The state change from replaceState re-triggers the debounced save.
-      replaceState(adoptState(replayPending(result.state, pendingActions.current), localActiveBoardId));
+      const replayed = replayPending(result.state, pendingActions.current);
+      replaceState(adoptState(replayed.state, localActiveBoardId));
+      if (replayed.lostActionCount > 0) {
+        notify("Reloaded changes from another window; your last edit was not saved.");
+      }
       return;
     }
     consecutiveConflicts.current = 0;

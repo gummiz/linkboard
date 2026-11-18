@@ -84,8 +84,19 @@ export function decideFirstContact(file: AppState | null, browser: AppState | nu
   return { kind: "conflict", file, browser };
 }
 
-export function replayPending(fileState: AppState, pending: readonly Action[]): AppState {
-  return pending.reduce(reducer, fileState);
+/** The reducer returns the same state object when an action's target is gone; such an edit is lost. */
+export function replayPending(
+  fileState: AppState,
+  pending: readonly Action[],
+): { state: AppState; lostActionCount: number } {
+  let state = fileState;
+  let lostActionCount = 0;
+  for (const action of pending) {
+    const next = reducer(state, action);
+    if (next === state) lostActionCount++;
+    state = next;
+  }
+  return { state, lostActionCount };
 }
 
 /** Takes the incoming state but keeps the local active board if it still exists there. */
