@@ -1,8 +1,9 @@
+import { defined } from "./defined";
 import { type AppState, type Board, type Category, type Item } from "./model";
 
 const STORAGE_KEY = "linkboard:v1";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
@@ -53,10 +54,10 @@ export function parseState(value: unknown): AppState | null {
   if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.boards)) return null;
   const boards = value.boards.map(parseBoard);
   if (boards.length === 0 || boards.some((board) => board === null)) return null;
-  const valid = boards as Board[];
+  const valid = boards.filter((board) => board !== null);
   const requested = str(value.activeBoardId);
-  const activeBoardId = valid.some((board) => board.id === requested) ? requested! : valid[0]!.id;
-  return { version: 1, boards: valid, activeBoardId };
+  const activeBoard = valid.find((board) => board.id === requested) ?? defined(valid[0], "a board");
+  return { version: 1, boards: valid, activeBoardId: activeBoard.id };
 }
 
 export function loadState(): AppState | null {
@@ -68,12 +69,31 @@ export function loadState(): AppState | null {
   }
 }
 
-/** Returns false when the browser refused the write (private mode, quota). */
-export function saveState(state: AppState): boolean {
+export type StorageStatus = "ok" | "failing";
+
+let storageStatus: StorageStatus = "ok";
+const storageListeners = new Set<() => void>();
+
+export function getStorageStatus(): StorageStatus {
+  return storageStatus;
+}
+
+export function subscribeStorageStatus(listener: () => void): () => void {
+  storageListeners.add(listener);
+  return () => { storageListeners.delete(listener); };
+}
+
+function recordStorageStatus(status: StorageStatus) {
+  if (status === storageStatus) return;
+  storageStatus = status;
+  for (const listener of storageListeners) listener();
+}
+
+export function saveState(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    return true;
+    recordStorageStatus("ok");
   } catch {
-    return false;
+    recordStorageStatus("failing");
   }
 }

@@ -1,5 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { defined } from "./defined";
 import { makeBoard, type AppState } from "./model";
 import { fetchServerState, putServerState } from "./serverSync";
 import type { Action } from "./store";
@@ -27,7 +28,7 @@ function setup() {
     { initialProps: { state: localState } },
   );
   // Same as App: the action is tracked together with the dispatch that changes the state.
-  act(() => hook.result.current.track(renameAction));
+  act(() => { hook.result.current.track(renameAction); });
   hook.rerender({ state: renamedState });
   return { hook, replaceState, notify };
 }
@@ -67,8 +68,8 @@ describe("useServerSave", () => {
     await advance(300);
 
     expect(replaceState).toHaveBeenCalledTimes(1);
-    const replayedState = replaceState.mock.calls[0]![0] as AppState;
-    expect(replayedState.boards[0]!.name).toBe("Renamed");
+    const replayedState = defined(replaceState.mock.calls[0])[0] as AppState;
+    expect(defined(replayedState.boards[0]).name).toBe("Renamed");
 
     hook.rerender({ state: replayedState });
     await advance(300);
@@ -78,7 +79,7 @@ describe("useServerSave", () => {
 
   it("notifies when a replayed action's target is gone in the file state", async () => {
     const fileWithoutBoard: AppState = { ...fileState, boards: [makeBoard("Other")] };
-    fileWithoutBoard.activeBoardId = fileWithoutBoard.boards[0]!.id;
+    fileWithoutBoard.activeBoardId = defined(fileWithoutBoard.boards[0]).id;
     putServerStateMock.mockResolvedValueOnce({ kind: "conflict", revision: 7, state: fileWithoutBoard });
     const { replaceState, notify } = setup();
     await advance(300);
@@ -100,7 +101,7 @@ describe("useServerSave", () => {
       .mockResolvedValueOnce({ kind: "conflict", revision: 8, state: fileState });
     const { hook, replaceState, notify } = setup();
     await advance(300);
-    hook.rerender({ state: replaceState.mock.calls[0]![0] as AppState });
+    hook.rerender({ state: defined(replaceState.mock.calls[0])[0] as AppState });
     await advance(300);
 
     expect(replaceState).toHaveBeenCalledTimes(2);
@@ -145,8 +146,9 @@ describe("useServerSave focus refresh", () => {
       useServerSave({ enabled: true, initialRevision: 3, state: localState, replaceState: vi.fn(), notify }),
     );
 
-    await act(async () => {
+    await act(() => {
       window.dispatchEvent(new Event("focus"));
+      return Promise.resolve();
     });
     expect(notify).toHaveBeenCalledWith("Not saved: server error (data file is corrupt)");
   });

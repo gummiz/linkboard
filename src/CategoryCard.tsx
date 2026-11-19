@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
+import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
 import { CATEGORY_MIME, firstUri, hasType, isLowerHalf, ITEM_MIME, URI_MIME } from "./dnd";
 import { ItemRow } from "./ItemRow";
 import {
@@ -31,13 +31,12 @@ export function CategoryCard(props: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [itemSlot, setItemSlot] = useState<number | null>(null);
   const hot = hotItemIds(category);
-  const update = (patch: Extract<Action, { type: "category/update" }>["patch"]) =>
-    dispatch({ type: "category/update", boardId, categoryId: category.id, patch });
+  const update = (patch: Extract<Action, { type: "category/update" }>["patch"]) => { dispatch({ type: "category/update", boardId, categoryId: category.id, patch }); };
 
   const hidden = category.showAll ? 0 : Math.max(0, category.items.length - VISIBLE_ITEM_LIMIT);
   const visible = category.collapsed ? [] : category.items.slice(0, category.items.length - hidden);
 
-  const addLink = (event: FormEvent) => {
+  const addLink = (event: SubmitEvent) => {
     event.preventDefault();
     const url = normalizeUrl(draft);
     if (url === null) {
@@ -120,7 +119,7 @@ export function CategoryCard(props: Props) {
           className="collapse-toggle"
           aria-expanded={!category.collapsed}
           aria-label={category.collapsed ? `Expand ${category.name}` : `Collapse ${category.name}`}
-          onClick={() => update({ collapsed: !category.collapsed })}
+          onClick={() => { update({ collapsed: !category.collapsed }); }}
         >
           {category.collapsed ? "▸" : "▾"}
         </button>
@@ -134,7 +133,9 @@ export function CategoryCard(props: Props) {
             if (name !== "" && name !== category.name) update({ name });
             else event.target.value = category.name;
           }}
-          onKeyDown={(event) => event.key === "Enter" && event.currentTarget.blur()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
         />
         {category.collapsed && <span className="category-count">{category.items.length}</span>}
         <button
@@ -142,7 +143,7 @@ export function CategoryCard(props: Props) {
           className="icon-button"
           aria-label={`${category.name} options`}
           aria-expanded={menuOpen}
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => { setMenuOpen((open) => !open); }}
         >
           ⋯
         </button>
@@ -160,7 +161,7 @@ export function CategoryCard(props: Props) {
                 aria-label={`Color ${color}`}
                 className="swatch"
                 style={{ background: color }}
-                onClick={() => update({ color })}
+                onClick={() => { update({ color }); }}
               />
             ))}
           </div>
@@ -189,7 +190,7 @@ export function CategoryCard(props: Props) {
             {itemSlot !== null && itemSlot >= visible.length && <li className="drop-marker" aria-hidden />}
           </ul>
           {category.items.length > VISIBLE_ITEM_LIMIT && (
-            <button type="button" className="more" onClick={() => update({ showAll: !category.showAll })}>
+            <button type="button" className="more" onClick={() => { update({ showAll: !category.showAll }); }}>
               {category.showAll ? "Show less" : `+ ${hidden} more`}
             </button>
           )}

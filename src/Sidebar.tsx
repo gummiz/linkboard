@@ -1,12 +1,17 @@
-import { useState, type Dispatch, type FormEvent } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SubmitEvent } from "react";
 import type { AppState } from "./model";
 import type { Action } from "./store";
 
 export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispatch<Action> }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const nameInput = useRef<HTMLInputElement>(null);
 
-  const submit = (event: FormEvent) => {
+  useEffect(() => {
+    if (adding) nameInput.current?.focus();
+  }, [adding]);
+
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
     if (trimmed !== "") dispatch({ type: "board/add", name: trimmed });
@@ -24,7 +29,7 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
               type="button"
               className={board.id === state.activeBoardId ? "board-link active" : "board-link"}
               aria-current={board.id === state.activeBoardId ? "page" : undefined}
-              onClick={() => dispatch({ type: "board/select", boardId: board.id })}
+              onClick={() => { dispatch({ type: "board/select", boardId: board.id }); }}
             >
               <span className="board-link-name">{board.name}</span>
               <span className="board-link-count">
@@ -37,17 +42,21 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
       {adding ? (
         <form onSubmit={submit} className="inline-form">
           <input
-            autoFocus
+            ref={nameInput}
             value={name}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => name.trim() === "" && setAdding(false)}
-            onKeyDown={(event) => event.key === "Escape" && setAdding(false)}
+            onChange={(event) => { setName(event.target.value); }}
+            onBlur={() => {
+              if (name.trim() === "") setAdding(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setAdding(false);
+            }}
             placeholder="Board name"
             aria-label="New board name"
           />
         </form>
       ) : (
-        <button type="button" className="add-board" onClick={() => setAdding(true)}>
+        <button type="button" className="add-board" onClick={() => { setAdding(true); }}>
           + New board
         </button>
       )}

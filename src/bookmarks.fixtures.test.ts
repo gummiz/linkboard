@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { defined } from "./defined";
 import { exportBookmarksHtml, importBookmarksHtml } from "./bookmarks";
 import { CATEGORY_COLORS, type Board } from "./model";
 
@@ -50,8 +51,8 @@ describe("chrome fixture", () => {
   });
 
   it("rotates category colors in order", () => {
-    expect(result.boards[0]!.categories.map((category) => category.color)).toEqual(CATEGORY_COLORS.slice(0, 4));
-    expect(result.boards[1]!.categories.map((category) => category.color)).toEqual(CATEGORY_COLORS.slice(0, 2));
+    expect(defined(result.boards[0]).categories.map((category) => category.color)).toEqual(CATEGORY_COLORS.slice(0, 4));
+    expect(defined(result.boards[1]).categories.map((category) => category.color)).toEqual(CATEGORY_COLORS.slice(0, 2));
   });
 });
 
@@ -104,7 +105,7 @@ describe("safari fixture", () => {
   });
 
   it("keeps Reading List notes only on the links that have one", () => {
-    const reading = result.boards[2]!.categories[0]!.items.map((item) => item.note);
+    const reading = defined(defined(result.boards[2]).categories[0]).items.map((item) => item.note);
     expect(reading).toEqual(["Finish over the weekend", "", "Needs fresh basil"]);
   });
 });
@@ -159,7 +160,7 @@ describe("papaly fixture", () => {
   });
 
   it("keeps boards that only have categories without a General category", () => {
-    const ai = result.boards.find((board) => board.name === "AI")!;
+    const ai = defined(result.boards.find((board) => board.name === "AI"));
     expect(ai.categories.map((category) => category.name)).toEqual(["Chat", "Image"]);
   });
 
@@ -172,6 +173,7 @@ describe("papaly fixture", () => {
 describe("edge-cases fixture", () => {
   const result = importBookmarksHtml(fixture("edge-cases"), "Edge");
   const board = (name: string) => result.boards.find((b) => b.name === name);
+  const firstItems = (boardName: string) => defined(defined(board(boardName)).categories[0]).items;
 
   it("imports the expected boards", () => {
     expect(summarizeBoards(result.boards)).toEqual([
@@ -208,18 +210,18 @@ describe("edge-cases fixture", () => {
   });
 
   it("decodes entities in names, URLs and notes", () => {
-    const item = board("Übersicht & Größe 🍰")!.categories[0]!.items[0]!;
+    const item = defined(firstItems("Übersicht & Größe 🍰")[0]);
     expect(item.name).toBe("Café & Crème 🍰");
     expect(item.url).toBe("https://example.com/cafe?a=1&b=2");
     expect(item.note).toBe("Ünïcode & <tags>");
   });
 
   it("falls back to the URL when a link has no text", () => {
-    expect(board("Odd links")!.categories[0]!.items[0]!.name).toBe("https://notext.example.com/");
+    expect(defined(firstItems("Odd links")[0]).name).toBe("https://notext.example.com/");
   });
 
   it("adds https:// to a URL without protocol", () => {
-    expect(board("Odd links")!.categories[0]!.items[1]!.url).toBe("https://example.org/no-protocol");
+    expect(defined(firstItems("Odd links")[1]).url).toBe("https://example.org/no-protocol");
   });
 
   it("skips about: and file: links", () => {
@@ -231,7 +233,7 @@ describe("edge-cases fixture", () => {
   });
 
   it("merges a folder path 'A / B' with the nested path A > B into one category", () => {
-    const categories = board("Ops / Infra")!.categories.map((category) => category.name);
+    const categories = defined(board("Ops / Infra")).categories.map((category) => category.name);
     expect(categories.filter((name) => name === "A / B")).toHaveLength(1);
   });
 });
@@ -241,7 +243,7 @@ describe("category colors", () => {
     const count = CATEGORY_COLORS.length + 1;
     const folders = Array.from({ length: count }, (_, i) => `<DT><H3>C${i}</H3><DL><p><DT><A HREF="https://c${i}.example.com/">L</A></DL><p>`);
     const html = `<DL><p><DT><H3>Board</H3><DL><p>${folders.join("")}</DL><p></DL><p>`;
-    const colors = importBookmarksHtml(html, "File").boards[0]!.categories.map((category) => category.color);
+    const colors = defined(importBookmarksHtml(html, "File").boards[0]).categories.map((category) => category.color);
     expect(colors).toHaveLength(count);
     expect(colors.at(-1)).toBe(CATEGORY_COLORS[0]);
   });

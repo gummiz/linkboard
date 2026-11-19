@@ -41,6 +41,10 @@ export const CATEGORY_COLORS = [
   "#475569",
 ] as const;
 
+export function categoryColor(index: number): string {
+  return CATEGORY_COLORS[index % CATEGORY_COLORS.length] ?? CATEGORY_COLORS[0];
+}
+
 export function newId(): string {
   return crypto.randomUUID();
 }

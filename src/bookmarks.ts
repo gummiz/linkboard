@@ -1,4 +1,4 @@
-import { CATEGORY_COLORS, makeBoard, makeCategory, makeItem, normalizeUrl, type Board, type Item } from "./model";
+import { categoryColor, makeBoard, makeCategory, makeItem, normalizeUrl, type Board, type Item } from "./model";
 
 export interface ImportResult {
   boards: Board[];
@@ -42,15 +42,15 @@ export function importBookmarksHtml(html: string, fallbackBoardName: string): Im
       const link = firstChild(dt, "A");
       if (folder !== null) {
         const nested = nestedList(dt);
-        if (nested !== null) visit(nested, [...path, folder.textContent?.trim() || "Folder"]);
+        if (nested !== null) visit(nested, [...path, folder.textContent.trim() || "Folder"]);
       } else if (link !== null) {
         const url = normalizeUrl(link.getAttribute("href") ?? "");
         if (url === null) {
           skipped += 1;
           continue;
         }
-        const note = nextElement(dt, "DD")?.textContent?.trim() ?? "";
-        add(path, makeItem(link.textContent?.trim() || url, url, note));
+        const note = nextElement(dt, "DD")?.textContent.trim() ?? "";
+        add(path, makeItem(link.textContent.trim() || url, url, note));
       }
     }
   };
@@ -60,7 +60,7 @@ export function importBookmarksHtml(html: string, fallbackBoardName: string): Im
 
   const toCategories = (categories: Map<string, Item[]>) =>
     [...categories].map(([name, items], index) =>
-      makeCategory(name, CATEGORY_COLORS[index % CATEGORY_COLORS.length]!, items),
+      makeCategory(name, categoryColor(index), items),
     );
   const boards = [...groups].map(([name, categories]) => makeBoard(name, toCategories(categories)));
   return { boards, imported, skipped };
@@ -73,7 +73,8 @@ export function importBookmarksHtml(html: string, fallbackBoardName: string): Im
  */
 function lonelyWrapperContents(root: Element): Element | null {
   const entries = directChildren(root, "DT");
-  const contents = entries.length === 1 ? folderList(entries[0]!) : null;
+  const [onlyEntry, ...otherEntries] = entries;
+  const contents = onlyEntry !== undefined && otherEntries.length === 0 ? folderList(onlyEntry) : null;
   if (contents === null) return null;
   const children = directChildren(contents, "DT");
   const onlyFolders = children.every((dt) => folderList(dt) !== null);

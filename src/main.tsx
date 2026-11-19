@@ -4,7 +4,9 @@ import { App } from "./App";
 import { loadInitialState } from "./bootstrap";
 import "./styles.css";
 
-const root = createRoot(document.getElementById("root")!);
+const container = document.getElementById("root");
+if (container === null) throw new Error("Missing #root element");
+const root = createRoot(container);
 
 try {
   const initial = await loadInitialState();

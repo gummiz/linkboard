@@ -17,13 +17,13 @@ type UseServerSaveOptions = {
   enabled: boolean;
   initialRevision: number;
   state: AppState;
-  replaceState(state: AppState): void;
-  notify(message: string): void;
+  replaceState: (state: AppState) => void;
+  notify: (message: string) => void;
 };
 
 export function useServerSave(options: UseServerSaveOptions): {
-  track(action: Action): void;
-  saveImmediately(state: AppState): Promise<SaveResult>;
+  track: (action: Action) => void;
+  saveImmediately: (state: AppState) => Promise<SaveResult>;
 } {
   const { enabled, state } = options;
   const latestOptions = useRef(options);
@@ -46,7 +46,7 @@ export function useServerSave(options: UseServerSaveOptions): {
     return result;
   }, []);
 
-  const savePending = useCallback(async () => {
+  const savePending = useCallback(async function savePending(): Promise<void> {
     if (saveInFlight.current || pendingActions.current.length === 0) return;
     const { state: stateToSave, replaceState, notify } = latestOptions.current;
     const sentActions = pendingActions.current.slice();
@@ -93,7 +93,7 @@ export function useServerSave(options: UseServerSaveOptions): {
   useEffect(() => {
     if (!enabled || pendingActions.current.length === 0) return;
     const timer = setTimeout(() => void savePending(), SAVE_DEBOUNCE_MILLISECONDS);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [enabled, state, savePending]);
 
   useEffect(() => {

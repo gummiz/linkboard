@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { defined } from "./defined";
 import { ConflictDialog } from "./ConflictDialog";
 import { makeBoard, makeCategory, makeItem, type AppState } from "./model";
 
@@ -18,12 +19,13 @@ function stateWithLinks(boardCount: number, linksPerBoard: number): AppState {
       ],
     ),
   );
-  return { version: 1, boards, activeBoardId: boards[0]!.id };
+  return { version: 1, boards, activeBoardId: defined(boards[0]).id };
 }
 
 beforeAll(() => {
   // jsdom has no modal support for <dialog>.
-  HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+  const dialogPrototype: { showModal?: (this: HTMLDialogElement) => void } = HTMLDialogElement.prototype;
+  dialogPrototype.showModal ??= function showModal(this: HTMLDialogElement) {
     this.setAttribute("open", "");
   };
 });
@@ -99,7 +101,7 @@ describe("ConflictDialog", () => {
     const handlers = { onUseFile: vi.fn(), onMerge: vi.fn(), onDownloadBrowser: vi.fn() };
     const { unmount } = render(<ConflictDialog file={stateWithLinks(1, 1)} browser={stateWithLinks(1, 1)} {...handlers} />);
     opener.remove();
-    expect(() => unmount()).not.toThrow();
+    expect(() => { unmount(); }).not.toThrow();
   });
 
   it("prevents Escape from dismissing the dialog", () => {

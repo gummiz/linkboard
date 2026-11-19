@@ -7,9 +7,9 @@ type ConflictDialogProps = {
   browser: AppState;
   statusMessage?: string | null;
   busy?: boolean;
-  onUseFile(): void;
-  onMerge(): void;
-  onDownloadBrowser(): void;
+  onUseFile: () => void;
+  onMerge: () => void;
+  onDownloadBrowser: () => void;
 };
 
 function countContents(state: AppState) {
@@ -36,21 +36,23 @@ export function ConflictDialog({
   onDownloadBrowser,
 }: ConflictDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const keepButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const introId = useId();
   const keepDescriptionId = useId();
   const addDescriptionId = useId();
   const browserLinkCount = countContents(browser).linkCount;
 
-  // Read during render: autoFocus on a child moves focus before any effect runs.
   const elementFocusedBeforeOpen = useRef(document.activeElement);
 
   useEffect(() => {
-    const dialog = dialogRef.current!;
+    const dialog = dialogRef.current;
+    if (dialog === null) return;
+    const previous = elementFocusedBeforeOpen.current;
     // StrictMode runs this effect twice; showModal() on an open dialog can throw.
     if (!dialog.open) dialog.showModal();
+    keepButton.current?.focus();
     return () => {
-      const previous = elementFocusedBeforeOpen.current;
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, []);
@@ -62,7 +64,7 @@ export function ConflictDialog({
       aria-labelledby={titleId}
       aria-describedby={introId}
       // Esc must not dismiss an undecided state.
-      onCancel={(event) => event.preventDefault()}
+      onCancel={(event) => { event.preventDefault(); }}
     >
       <h2 id={titleId}>This browser has its own boards</h2>
       <p id={introId} className="conflict-dialog-intro">
@@ -79,7 +81,7 @@ export function ConflictDialog({
         <button
           type="button"
           className="conflict-choice"
-          autoFocus
+          ref={keepButton}
           aria-label="Keep the shared boards"
           aria-describedby={keepDescriptionId}
           disabled={busy}

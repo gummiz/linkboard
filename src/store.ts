@@ -1,3 +1,4 @@
+import { defined } from "./defined";
 import { makeBoard, makeCategory, type AppState, type Board, type Category, type Item } from "./model";
 
 export type Action =
@@ -49,24 +50,13 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 function updateBoard(state: AppState, boardId: string, update: (board: Board) => Board): AppState {
-  let changed = false;
-  const boards = state.boards.map((board) => {
-    if (board.id !== boardId) return board;
-    const next = update(board);
-    changed ||= next !== board;
-    return next;
-  });
-  return changed ? { ...state, boards } : state;
+  const boards = state.boards.map((board) => (board.id === boardId ? update(board) : board));
+  return boards.some((board, index) => board !== state.boards[index]) ? { ...state, boards } : state;
 }
 
 function updateCategories(board: Board, update: (category: Category) => Category): Board {
-  let changed = false;
-  const categories = board.categories.map((category) => {
-    const next = update(category);
-    changed ||= next !== category;
-    return next;
-  });
-  return changed ? { ...board, categories } : board;
+  const categories = board.categories.map(update);
+  return categories.some((category, index) => category !== board.categories[index]) ? { ...board, categories } : board;
 }
 
 function updateItem(board: Board, itemId: string, update: (item: Item) => Item): Board {
@@ -105,7 +95,7 @@ export function reducer(state: AppState, action: Action): AppState {
       if (boards.length === 0) boards.push(makeBoard("My Board"));
       const activeBoardId =
         state.activeBoardId === action.boardId
-          ? (boards[Math.min(index, boards.length - 1)] ?? boards[0]!).id
+          ? defined(boards[Math.min(index, boards.length - 1)], "a board to activate").id
           : state.activeBoardId;
       return { ...state, boards, activeBoardId };
     }
@@ -185,7 +175,8 @@ function moveItem(board: Board, action: Extract<Action, { type: "item/move" }>):
     );
   }
 
-  const moved = source.items[from]!;
+  const moved = source.items[from];
+  if (moved === undefined) return board;
   return updateCategories(board, (category) => {
     if (category.id === source.id) {
       return { ...category, items: category.items.filter((item) => item.id !== moved.id) };
@@ -198,5 +189,5 @@ function moveItem(board: Board, action: Extract<Action, { type: "item/move" }>):
 }
 
 export function activeBoard(state: AppState): Board {
-  return state.boards.find((board) => board.id === state.activeBoardId) ?? state.boards[0]!;
+  return state.boards.find((board) => board.id === state.activeBoardId) ?? defined(state.boards[0], "a board");
 }

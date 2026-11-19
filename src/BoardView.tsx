@@ -1,6 +1,6 @@
-import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
+import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
 import { CategoryCard } from "./CategoryCard";
-import { CATEGORY_COLORS, type Board } from "./model";
+import { categoryColor, type Board } from "./model";
 import { CATEGORY_MIME, hasType, isLowerHalf } from "./dnd";
 import type { Action } from "./store";
 
@@ -9,11 +9,11 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
   const [dropSlot, setDropSlot] = useState<number | null>(null);
   const linkCount = board.categories.reduce((total, category) => total + category.items.length, 0);
 
-  const addCategory = (event: FormEvent) => {
+  const addCategory = (event: SubmitEvent) => {
     event.preventDefault();
     const name = newCategory.trim();
     if (name === "") return;
-    const color = CATEGORY_COLORS[board.categories.length % CATEGORY_COLORS.length]!;
+    const color = categoryColor(board.categories.length);
     dispatch({ type: "category/add", boardId: board.id, name, color });
     setNewCategory("");
   };
@@ -52,7 +52,9 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
               dispatch({ type: "board/update", boardId: board.id, patch: { name } });
             } else event.target.value = board.name;
           }}
-          onKeyDown={(event) => event.key === "Enter" && event.currentTarget.blur()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
         />
         <span className="board-meta">
           {board.categories.length} categories · {linkCount} links
@@ -60,7 +62,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
         <form className="add-category" onSubmit={addCategory}>
           <input
             value={newCategory}
-            onChange={(event) => setNewCategory(event.target.value)}
+            onChange={(event) => { setNewCategory(event.target.value); }}
             placeholder="New category"
             aria-label="New category name"
           />
@@ -74,7 +76,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
       {board.categories.length === 0 ? (
         <p className="empty-board">This board is empty. Add a category to start collecting links.</p>
       ) : (
-        <div className="columns" onDragLeave={() => setDropSlot(null)}>
+        <div className="columns" onDragLeave={() => { setDropSlot(null); }}>
           {board.categories.map((category, index) => (
             <CategoryCard
               key={category.id}
@@ -86,7 +88,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
               dropAfter={dropSlot === index + 1 && index === board.categories.length - 1}
               onCategoryDragOver={categoryDragOver(index)}
               onCategoryDrop={categoryDrop}
-              onCategoryDragEnd={() => setDropSlot(null)}
+              onCategoryDragEnd={() => { setDropSlot(null); }}
             />
           ))}
         </div>

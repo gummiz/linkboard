@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { defined } from "./defined";
 import { makeBoard, makeCategory, makeItem, sampleState, type AppState } from "./model";
 import type { Action } from "./store";
 import {
@@ -11,7 +12,7 @@ import {
 } from "./serverSync";
 
 function stateOf(...boards: ReturnType<typeof makeBoard>[]): AppState {
-  return { version: 1, boards, activeBoardId: boards[0]!.id };
+  return { version: 1, boards, activeBoardId: defined(boards[0]).id };
 }
 
 function jsonResponse(body: unknown, status = 200, contentType = "application/json"): Response {
@@ -23,7 +24,7 @@ function jsonResponse(body: unknown, status = 200, contentType = "application/js
 
 function mockFetch(implementation: () => Promise<Response>) {
   const fetchMock = vi.fn(implementation);
-  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  globalThis.fetch = fetchMock;
   return fetchMock;
 }
 
@@ -74,7 +75,8 @@ describe("fetchServerState", () => {
     const state = sampleState();
     const fetchMock = mockFetch(() => Promise.resolve(jsonResponse({ revision: 3, state })));
     expect(await fetchServerState()).toEqual({ revision: 3, state });
-    expect(fetchMock).toHaveBeenCalledWith("/api/state", { signal: expect.any(AbortSignal) });
+    const anyAbortSignal: unknown = expect.any(AbortSignal);
+    expect(fetchMock).toHaveBeenCalledWith("/api/state", { signal: anyAbortSignal });
   });
 
   it("returns snapshot with null state for an empty server", async () => {
@@ -136,7 +138,7 @@ describe("decideFirstContact", () => {
 
   it("uses file when both are identical except activeBoardId", () => {
     const twoBoards = stateOf(makeBoard("One"), makeBoard("Two"));
-    const other = { ...twoBoards, activeBoardId: twoBoards.boards[1]!.id };
+    const other = { ...twoBoards, activeBoardId: defined(twoBoards.boards[1]).id };
     expect(boardsEqual(twoBoards, other)).toBe(true);
     expect(decideFirstContact(twoBoards, other)).toEqual({ kind: "use-file", state: twoBoards });
   });
@@ -156,10 +158,10 @@ describe("replayPending", () => {
     const fileState = stateOf(board);
     const item = makeItem("new", "https://new.example/");
     const pending: Action[] = [
-      { type: "item/add", boardId: board.id, categoryId: board.categories[0]!.id, item },
+      { type: "item/add", boardId: board.id, categoryId: defined(board.categories[0]).id, item },
     ];
     const result = replayPending(fileState, pending);
-    expect(result.state.boards[0]!.categories[0]!.items).toEqual([item]);
+    expect(defined(defined(result.state.boards[0]).categories[0]).items).toEqual([item]);
     expect(result.lostActionCount).toBe(0);
   });
 
@@ -179,7 +181,7 @@ describe("adoptState", () => {
   const incoming = stateOf(makeBoard("One"), makeBoard("Two"));
 
   it("keeps a valid local active board", () => {
-    const localId = incoming.boards[1]!.id;
+    const localId = defined(incoming.boards[1]).id;
     expect(adoptState(incoming, localId).activeBoardId).toBe(localId);
   });
 

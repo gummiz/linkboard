@@ -27,8 +27,8 @@ export function Favicon({ url, name }: { url: string; name: string }) {
           height={16}
           loading="lazy"
           referrerPolicy="no-referrer"
-          onLoad={() => setStatus("loaded")}
-          onError={() => setStatus("failed")}
+          onLoad={() => { setStatus("loaded"); }}
+          onError={() => { setStatus("failed"); }}
         />
       )}
     </span>

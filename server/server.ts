@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import http from "node:http";
 import path from "node:path";
 import type { AppState, RevisionedState } from "../src/model";
-import { parseState } from "../src/storage";
+import { isRecord, parseState } from "../src/storage";
 import { readStateFile, writeStateFile } from "./stateFile";
 
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
@@ -35,7 +35,7 @@ function readBody(request: http.IncomingMessage): Promise<string | null> {
       receivedBytes += chunk.length;
       if (receivedBytes <= MAX_BODY_BYTES) chunks.push(chunk);
     });
-    request.on("end", () => resolve(receivedBytes > MAX_BODY_BYTES ? null : Buffer.concat(chunks).toString("utf8")));
+    request.on("end", () => { resolve(receivedBytes > MAX_BODY_BYTES ? null : Buffer.concat(chunks).toString("utf8")); });
     request.on("error", reject);
   });
 }
@@ -63,18 +63,18 @@ export function createLinkboardServer({ dataDir, distDir: distDirOption }: Optio
 
   async function handlePutState(request: http.IncomingMessage, response: http.ServerResponse) {
     const rawBody = await readBody(request);
-    if (rawBody === null) return sendJson(response, 413, { error: "Body too large" });
-    let body: { baseRevision?: unknown; state?: unknown } | null;
+    if (rawBody === null) { sendJson(response, 413, { error: "Body too large" }); return; }
+    let body: unknown;
     try {
       body = JSON.parse(rawBody);
     } catch {
-      return sendJson(response, 400, { error: "Invalid JSON" });
+      sendJson(response, 400, { error: "Invalid JSON" }); return;
     }
-    const state = parseState(body?.state);
-    if (state === null || !Number.isInteger(body?.baseRevision)) {
-      return sendJson(response, 400, { error: "Invalid baseRevision or state" });
+    const state = isRecord(body) ? parseState(body.state) : null;
+    const baseRevision = isRecord(body) ? body.baseRevision : undefined;
+    if (state === null || typeof baseRevision !== "number" || !Number.isInteger(baseRevision)) {
+      sendJson(response, 400, { error: "Invalid baseRevision or state" }); return;
     }
-    const baseRevision = body?.baseRevision as number;
     const result = putQueue.then(() => applyPut(response, baseRevision, state));
     putQueue = result.catch(() => undefined);
     await result;
@@ -117,13 +117,13 @@ export function createLinkboardServer({ dataDir, distDir: distDirOption }: Optio
     const url = new URL(request.url ?? "/", "http://localhost");
     if (url.pathname === "/api/state" && request.method === "GET") return handleGetState(response);
     if (url.pathname === "/api/state" && request.method === "PUT") return handlePutState(request, response);
-    if (url.pathname.startsWith("/api/")) return sendJson(response, 404, { error: "Not found" });
+    if (url.pathname.startsWith("/api/")) { sendJson(response, 404, { error: "Not found" }); return; }
     return handleStatic(url, response);
   }
 
   return http.createServer((request, response) => {
     route(request, response).catch((error: unknown) => {
-      console.error(`500 ${request.method} ${request.url}:`, error);
+      console.error(`500 ${request.method ?? "-"} ${request.url ?? "-"}:`, error);
       if (response.headersSent) return response.destroy();
       sendJson(response, 500, { error: error instanceof Error ? error.message : "Internal error" });
     });

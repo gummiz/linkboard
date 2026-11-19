@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "./defined";
 import { makeBoard, makeCategory, makeItem, type AppState } from "./model";
 import { mergeStates } from "./merge";
 
 function stateOf(...boards: ReturnType<typeof makeBoard>[]): AppState {
-  return { version: 1, boards, activeBoardId: boards[0]!.id };
+  return { version: 1, boards, activeBoardId: defined(boards[0]).id };
 }
 
 const allUrls = (state: AppState) =>
@@ -27,16 +28,16 @@ describe("mergeStates", () => {
     const browser = stateOf(makeBoard(" work ", [makeCategory("a", "#111", [makeItem("b", "https://b.example/")])]));
     const { state } = mergeStates(file, browser);
     expect(state.boards).toHaveLength(1);
-    expect(state.boards[0]!.categories).toHaveLength(1);
-    expect(state.boards[0]!.categories[0]!.items.map((item) => item.name)).toEqual(["a", "b"]);
+    expect(defined(state.boards[0]).categories).toHaveLength(1);
+    expect(defined(defined(state.boards[0]).categories[0]).items.map((item) => item.name)).toEqual(["a", "b"]);
   });
 
   it("appends an unmatched category into a matched board", () => {
     const file = stateOf(makeBoard("Work", [makeCategory("A", "#000", [makeItem("a", "https://a.example/")])]));
     const browser = stateOf(makeBoard("Work", [makeCategory("New", "#abc", [makeItem("b", "https://b.example/")])]));
     const { state } = mergeStates(file, browser);
-    expect(state.boards[0]!.categories.map((category) => category.name)).toEqual(["A", "New"]);
-    expect(state.boards[0]!.categories[1]!.color).toBe("#abc");
+    expect(defined(state.boards[0]).categories.map((category) => category.name)).toEqual(["A", "New"]);
+    expect(defined(defined(state.boards[0]).categories[1]).color).toBe("#abc");
   });
 
   it("skips a link whose URL exists in another board of the file", () => {
@@ -65,10 +66,10 @@ describe("mergeStates", () => {
     const browserItem = { ...makeItem("a", "https://a.example/", "browser note"), clicks: 9 };
     const browser = stateOf(makeBoard("W", [makeCategory("A", "#000", [browserItem])]));
     const { state } = mergeStates(file, browser);
-    const merged = state.boards[0]!.categories[0]!.items;
+    const merged = defined(defined(state.boards[0]).categories[0]).items;
     expect(merged).toHaveLength(1);
-    expect(merged[0]!.note).toBe("file note");
-    expect(merged[0]!.clicks).toBe(0);
+    expect(defined(merged[0]).note).toBe("file note");
+    expect(defined(merged[0]).clicks).toBe(0);
   });
 
   it("added entities get ids that do not collide", () => {
@@ -76,8 +77,8 @@ describe("mergeStates", () => {
     const file = stateOf(makeBoard("W", [makeCategory("A", "#000", [fileItem])]));
     const browserItem = { ...makeItem("b", "https://b.example/"), id: fileItem.id };
     const browserCategory = makeCategory("New", "#000", [browserItem]);
-    const browserBoard = makeBoard("Other", [{ ...browserCategory, id: file.boards[0]!.categories[0]!.id }]);
-    const { state } = mergeStates(file, stateOf({ ...browserBoard, id: file.boards[0]!.id }));
+    const browserBoard = makeBoard("Other", [{ ...browserCategory, id: defined(defined(file.boards[0]).categories[0]).id }]);
+    const { state } = mergeStates(file, stateOf({ ...browserBoard, id: defined(file.boards[0]).id }));
     const ids = state.boards.flatMap((board) => [
       board.id,
       ...board.categories.flatMap((category) => [category.id, ...category.items.map((item) => item.id)]),
@@ -109,7 +110,7 @@ describe("mergeStates", () => {
     const fileBefore = structuredClone(file);
     const browserBefore = structuredClone(browser);
     const { state } = mergeStates(file, browser);
-    expect(state.boards[0]!.categories.map((category) => category.name)).toEqual(["A", "Empty"]);
+    expect(defined(state.boards[0]).categories.map((category) => category.name)).toEqual(["A", "Empty"]);
     expect(file).toEqual(fileBefore);
     expect(browser).toEqual(browserBefore);
   });
