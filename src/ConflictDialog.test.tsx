@@ -24,7 +24,8 @@ function stateWithLinks(boardCount: number, linksPerBoard: number): AppState {
 
 beforeAll(() => {
   // jsdom has no modal support for <dialog>.
-  HTMLDialogElement.prototype.showModal ??= function showModal(this: HTMLDialogElement) {
+  const dialogPrototype: { showModal?: (this: HTMLDialogElement) => void } = HTMLDialogElement.prototype;
+  dialogPrototype.showModal ??= function showModal(this: HTMLDialogElement) {
     this.setAttribute("open", "");
   };
 });

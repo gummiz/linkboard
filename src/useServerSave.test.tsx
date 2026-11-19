@@ -146,8 +146,9 @@ describe("useServerSave focus refresh", () => {
       useServerSave({ enabled: true, initialRevision: 3, state: localState, replaceState: vi.fn(), notify }),
     );
 
-    await act(async () => {
+    await act(() => {
       window.dispatchEvent(new Event("focus"));
+      return Promise.resolve();
     });
     expect(notify).toHaveBeenCalledWith("Not saved: server error (data file is corrupt)");
   });

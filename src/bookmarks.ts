@@ -42,15 +42,15 @@ export function importBookmarksHtml(html: string, fallbackBoardName: string): Im
       const link = firstChild(dt, "A");
       if (folder !== null) {
         const nested = nestedList(dt);
-        if (nested !== null) visit(nested, [...path, folder.textContent?.trim() || "Folder"]);
+        if (nested !== null) visit(nested, [...path, folder.textContent.trim() || "Folder"]);
       } else if (link !== null) {
         const url = normalizeUrl(link.getAttribute("href") ?? "");
         if (url === null) {
           skipped += 1;
           continue;
         }
-        const note = nextElement(dt, "DD")?.textContent?.trim() ?? "";
-        add(path, makeItem(link.textContent?.trim() || url, url, note));
+        const note = nextElement(dt, "DD")?.textContent.trim() ?? "";
+        add(path, makeItem(link.textContent.trim() || url, url, note));
       }
     }
   };
