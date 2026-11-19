@@ -30,7 +30,7 @@ export default defineConfig(
     languageOptions: { globals: globals.node },
   },
   {
-    files: ["e2e/*.mjs", "eslint.config.js"],
+    files: ["e2e/*.mjs", "*.js"],
     extends: [js.configs.recommended],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },

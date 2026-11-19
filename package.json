@@ -14,7 +14,8 @@
     "test:e2e": "node e2e/app.e2e.mjs",
     "test:e2e:sync": "node e2e/sync.e2e.mjs",
     "lint": "eslint . --max-warnings=0",
-    "knip": "knip"
+    "knip": "knip",
+    "prepare": "husky"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -32,8 +33,10 @@
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
+    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "knip": "^6.46.1",
+    "lint-staged": "^17.6.1",
     "playwright-core": "^1.58.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.73.0",
