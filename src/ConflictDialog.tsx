@@ -7,9 +7,9 @@ type ConflictDialogProps = {
   browser: AppState;
   statusMessage?: string | null;
   busy?: boolean;
-  onUseFile(): void;
-  onMerge(): void;
-  onDownloadBrowser(): void;
+  onUseFile: () => void;
+  onMerge: () => void;
+  onDownloadBrowser: () => void;
 };
 
 function countContents(state: AppState) {
