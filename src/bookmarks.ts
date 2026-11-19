@@ -1,7 +1,7 @@
 import { CATEGORY_COLORS, makeBoard, makeCategory, makeItem, normalizeUrl, type Board, type Item } from "./model";
 
 export interface ImportResult {
-  board: Board;
+  boards: Board[];
   imported: number;
   /** Links whose URL was not http(s), such as javascript: bookmarklets or place: queries. */
   skipped: number;
@@ -9,21 +9,30 @@ export interface ImportResult {
 
 /**
  * Converts a browser bookmark export (Netscape bookmark file, produced by
- * Chrome, Firefox, Safari and Edge) into one board. Every folder that holds
- * links becomes a category named by its folder path; links outside any folder
- * go to "Unsorted".
+ * Chrome, Firefox, Safari and Edge) into boards. Each top-level folder becomes
+ * a board; the rest of a link's folder path names its category ("General" for
+ * links directly in the top folder). Links outside any folder go to a board
+ * named `fallbackBoardName`, category "Unsorted". A lone wrapper folder around
+ * everything is skipped, so its subfolders become the boards.
  */
-export function importBookmarksHtml(html: string, boardName: string): ImportResult {
+export function importBookmarksHtml(html: string, fallbackBoardName: string): ImportResult {
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const groups = new Map<string, Item[]>();
+  // board name -> category name -> items (Maps keep insertion order)
+  const groups = new Map<string, Map<string, Item[]>>();
   let imported = 0;
   let skipped = 0;
 
   const add = (path: string[], item: Item) => {
-    const key = path.length === 0 ? "Unsorted" : path.join(" / ");
-    const items = groups.get(key) ?? [];
+    // Destructuring default: an empty path (loose link) falls back to fallbackBoardName
+    const [boardKey = fallbackBoardName, ...rest] = path;
+    let categoryKey = rest.join(" / ");
+    if (path.length === 0) categoryKey = "Unsorted";
+    else if (rest.length === 0) categoryKey = "General";
+    const categories = groups.get(boardKey) ?? new Map<string, Item[]>();
+    const items = categories.get(categoryKey) ?? [];
     items.push(item);
-    groups.set(key, items);
+    categories.set(categoryKey, items);
+    groups.set(boardKey, categories);
     imported += 1;
   };
 
@@ -32,7 +41,7 @@ export function importBookmarksHtml(html: string, boardName: string): ImportResu
       const folder = firstChild(dt, "H3");
       const link = firstChild(dt, "A");
       if (folder !== null) {
-        const nested = firstChild(dt, "DL") ?? nextElement(dt, "DL");
+        const nested = nestedList(dt);
         if (nested !== null) visit(nested, [...path, folder.textContent?.trim() || "Folder"]);
       } else if (link !== null) {
         const url = normalizeUrl(link.getAttribute("href") ?? "");
@@ -47,12 +56,50 @@ export function importBookmarksHtml(html: string, boardName: string): ImportResu
   };
 
   const root = doc.querySelector("dl");
-  if (root !== null) visit(root, []);
+  if (root !== null) visit(lonelyWrapperContents(root) ?? root, []);
 
-  const categories = [...groups].map(([name, items], index) =>
-    makeCategory(name, CATEGORY_COLORS[index % CATEGORY_COLORS.length]!, items),
-  );
-  return { board: makeBoard(boardName, categories), imported, skipped };
+  const toCategories = (categories: Map<string, Item[]>) =>
+    [...categories].map(([name, items], index) =>
+      makeCategory(name, CATEGORY_COLORS[index % CATEGORY_COLORS.length]!, items),
+    );
+  const boards = [...groups].map(([name, categories]) => makeBoard(name, toCategories(categories)));
+  return { boards, imported, skipped };
+}
+
+/**
+ * The contents of a single top folder that only wraps other folders (e.g. one
+ * export root folder), or null. Requires a third folder level below it, so a
+ * lone board -> category export keeps its board name. Unwraps one level only.
+ */
+function lonelyWrapperContents(root: Element): Element | null {
+  const entries = directChildren(root, "DT");
+  const contents = entries.length === 1 ? folderList(entries[0]!) : null;
+  if (contents === null) return null;
+  const children = directChildren(contents, "DT");
+  const onlyFolders = children.every((dt) => folderList(dt) !== null);
+  const nestsDeeper = children.some((dt) => subEntries(dt).some((child) => folderList(child) !== null));
+  return onlyFolders && nestsDeeper ? contents : null;
+}
+
+/** The link list of a folder entry, or null when the entry is a link. */
+function folderList(dt: Element): Element | null {
+  return firstChild(dt, "H3") === null ? null : nestedList(dt);
+}
+
+/**
+ * The DL following a folder heading, wherever the browser put it. Firefox
+ * writes a <DD> description after the heading, and the HTML parser then moves
+ * the folder's DL inside that DD.
+ */
+function nestedList(dt: Element): Element | null {
+  const description = nextElement(dt, "DD");
+  return firstChild(dt, "DL") ?? nextElement(dt, "DL") ?? (description && firstChild(description, "DL"));
+}
+
+/** Entries inside a folder entry; empty for links. */
+function subEntries(dt: Element): Element[] {
+  const list = folderList(dt);
+  return list === null ? [] : directChildren(list, "DT");
 }
 
 /** DT elements of a DL, looking through the <p> wrappers browsers emit. */

@@ -604,7 +604,8 @@ a:focus-visible {
 
 @media (max-width: 720px) {
   .app {
-    grid-template-columns: 1fr;
+    /* minmax(0, …) stops the column growing with the scrolling board list */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .brand {

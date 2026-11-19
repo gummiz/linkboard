@@ -25,8 +25,9 @@ implementation with no Papaly code, assets or branding.
 - **Search**: press `/` to search every board by name, URL, note or category;
   use arrow keys and Enter to open a result.
 - **Import / export**: import a browser bookmarks file (Chrome, Firefox,
-  Safari, Edge); folders become categories. Export everything as a bookmarks
-  file, a full JSON backup, or a single board as JSON to share.
+  Safari, Edge); top-level folders become boards, subfolders categories.
+  Export everything as a bookmarks file, a full JSON backup, or a single board
+  as JSON to share.
 - Responsive layout and dark mode.
 
 Favicons load from each site's own `/favicon.ico`; no third-party icon service
@@ -52,6 +53,20 @@ npm run build
 npx vite preview --port 4173 &
 npm run test:e2e   # uses installed Chrome, or set CHROMIUM_PATH
 ```
+
+## Run with Docker
+
+Builds the app and serves it with nginx at http://localhost:5173. The container
+restarts on its own whenever Docker runs; enable "Start Docker Desktop when you
+sign in" so it is up after a reboot.
+
+```bash
+docker compose up -d --build   # build and start
+docker compose down            # stop
+```
+
+Rerun the first command after code changes. Port 5173 matches the dev server on
+purpose: boards live in `localStorage`, which is tied to the address.
 
 ## Layout
 

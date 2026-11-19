@@ -70,9 +70,9 @@ export function App() {
       setNotice(`No links found in ${file.name}.`);
       return;
     }
-    dispatch({ type: "board/add", board: result.board });
+    for (const board of result.boards) dispatch({ type: "board/add", board });
     setNotice(
-      `Imported ${plural(result.imported, "link")} into ${plural(result.board.categories.length, "category", "categories")}` +
+      `Imported ${plural(result.imported, "link")} into ${plural(result.boards.length, "board")}` +
         (result.skipped > 0 ? ` (skipped ${result.skipped} non-web links).` : "."),
     );
   };

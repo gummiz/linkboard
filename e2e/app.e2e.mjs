@@ -66,7 +66,7 @@ check("state persists across reload", (await itemsOf("Reference")).includes("BBC
 writeFileSync(`${out}/bookmarks.html`, `<!DOCTYPE NETSCAPE-Bookmark-file-1><DL><p><DT><H3>Work</H3><DL><p><DT><A HREF="https://example.org/">Example</A></DL><p></DL><p>`);
 await page.locator('input[type=file]').setInputFiles(`${out}/bookmarks.html`);
 await page.waitForSelector(".notice");
-check("import creates board", (await page.locator(".board-link-name").allTextContents()).includes("bookmarks") && (await itemsOf("Work")).includes("Example"));
+check("import creates board", (await page.locator(".board-link-name").allTextContents()).includes("Work") && (await itemsOf("General")).includes("Example"));
 await page.locator(".board-link", { hasText: "My First Board" }).click();
 await page.screenshot({ path: `${out}/03-board.png`, fullPage: true });
 
@@ -75,14 +75,24 @@ await page.getByLabel("New board name").fill("Reading");
 await page.getByLabel("New board name").press("Enter");
 check("new board is active and empty", await page.getByText("This board is empty").isVisible());
 
+writeFileSync(`${out}/multi.html`, `<!DOCTYPE NETSCAPE-Bookmark-file-1><DL><p><DT><H3>Articles</H3><DL><p><DT><A HREF="https://example.com/read">Read me</A></DL><p><DT><H3>Tools</H3><DL><p><DT><A HREF="https://example.com/tool">Tool</A></DL><p><DT><A HREF="https://example.com/loose">Loose</A></DL><p>`);
+await page.locator('input[type=file]').setInputFiles(`${out}/multi.html`);
+await page.locator(".notice", { hasText: "into 3 boards" }).waitFor();
+const boardNames = await page.locator(".board-link-name").allTextContents();
+check(`import of 2 folders + loose link adds 3 boards (${boardNames.join(", ")})`, ["Articles", "Tools", "multi"].every((name) => boardNames.includes(name)));
+check("notice reports 3 links into 3 boards", (await page.locator(".notice").textContent()).includes("Imported 3 links into 3 boards"));
+
 await page.setViewportSize({ width: 375, height: 800 });
 await page.locator(".board-link", { hasText: "My First Board" }).click();
 const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 check(`no horizontal scroll on phone (${overflow}px)`, overflow <= 0);
 await page.screenshot({ path: `${out}/04-mobile.png` });
+await page.setViewportSize({ width: 320, height: 640 });
+const narrowOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+check(`no horizontal scroll at 320px (${narrowOverflow}px)`, narrowOverflow <= 0);
 
-await page.emulateMedia({ colorScheme: "dark" });
 await page.setViewportSize({ width: 1280, height: 860 });
+await page.emulateMedia({ colorScheme: "dark" });
 await page.screenshot({ path: `${out}/05-dark.png` });
 check(`no page errors ${JSON.stringify(errors)}`, errors.length === 0);
 await browser.close();
