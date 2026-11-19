@@ -69,12 +69,32 @@ export function loadState(): AppState | null {
   }
 }
 
-/** Returns false when the browser refused the write (private mode, quota). */
-export function saveState(state: AppState): boolean {
+export type StorageStatus = "ok" | "failing";
+
+let storageStatus: StorageStatus = "ok";
+const storageListeners = new Set<() => void>();
+
+export function getStorageStatus(): StorageStatus {
+  return storageStatus;
+}
+
+export function subscribeStorageStatus(listener: () => void): () => void {
+  storageListeners.add(listener);
+  return () => { storageListeners.delete(listener); };
+}
+
+function recordStorageStatus(status: StorageStatus) {
+  if (status === storageStatus) return;
+  storageStatus = status;
+  for (const listener of storageListeners) listener();
+}
+
+/** Writes to localStorage and records whether the browser accepted it (private mode and quota can refuse). */
+export function saveState(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    return true;
+    recordStorageStatus("ok");
   } catch {
-    return false;
+    recordStorageStatus("failing");
   }
 }

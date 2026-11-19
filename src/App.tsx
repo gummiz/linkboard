@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useReducer, useRef, useState, useSyncExternalStore, type ChangeEvent } from "react";
 import type { InitialLoad } from "./bootstrap";
 import { exportBookmarksHtml, importBookmarksHtml } from "./bookmarks";
 import { BoardView } from "./BoardView";
@@ -8,7 +8,7 @@ import type { AppState } from "./model";
 import { SearchBox } from "./SearchBox";
 import { Sidebar } from "./Sidebar";
 import { pluralize } from "./pluralize";
-import { parseBoard, parseState, saveState } from "./storage";
+import { getStorageStatus, parseBoard, parseState, saveState, subscribeStorageStatus } from "./storage";
 import { adoptState } from "./serverSync";
 import { activeBoard, reducer, type Action } from "./store";
 import { useServerSave } from "./useServerSave";
@@ -22,13 +22,17 @@ function download(filename: string, contents: string, type: string) {
   URL.revokeObjectURL(url);
 }
 
+const STORAGE_FAILING_NOTICE = "This browser is not saving changes (storage is blocked or full).";
+
 export function App({ initial }: { initial: InitialLoad }) {
   const [state, dispatch] = useReducer(reducer, initial.state);
   const [conflict, setConflict] = useState(initial.mode === "server" ? (initial.conflict ?? null) : null);
   const [notice, setNotice] = useState<string | null>(initial.mode === "local" ? (initial.notice ?? null) : null);
   const [mergeInFlight, setMergeInFlight] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const storageStatus = useSyncExternalStore(subscribeStorageStatus, getStorageStatus);
   const board = activeBoard(state);
+  const visibleNotice = notice ?? (storageStatus === "failing" ? STORAGE_FAILING_NOTICE : null);
 
   const { track, saveImmediately } = useServerSave({
     enabled: initial.mode === "server" && conflict === null,
@@ -47,9 +51,7 @@ export function App({ initial }: { initial: InitialLoad }) {
   // While the conflict dialog is open, localStorage still holds the browser's own boards.
   useEffect(() => {
     if (conflict !== null) return;
-    if (!saveState(state)) {
-      queueMicrotask(() => { setNotice("This browser is not saving changes (storage is blocked or full)."); });
-    }
+    saveState(state);
   }, [state, conflict]);
 
   useEffect(() => {
@@ -199,9 +201,9 @@ export function App({ initial }: { initial: InitialLoad }) {
           }}
         />
       )}
-      {notice !== null && (
+      {visibleNotice !== null && (
         <div className="notice" role="status">
-          {notice}
+          {visibleNotice}
         </div>
       )}
     </div>
