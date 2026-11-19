@@ -47,7 +47,9 @@ export function App({ initial }: { initial: InitialLoad }) {
   // While the conflict dialog is open, localStorage still holds the browser's own boards.
   useEffect(() => {
     if (conflict !== null) return;
-    if (!saveState(state)) setNotice("This browser is not saving changes (storage is blocked or full).");
+    if (!saveState(state)) {
+      queueMicrotask(() => { setNotice("This browser is not saving changes (storage is blocked or full)."); });
+    }
   }, [state, conflict]);
 
   useEffect(() => {
