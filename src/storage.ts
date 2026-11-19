@@ -2,7 +2,7 @@ import { type AppState, type Board, type Category, type Item } from "./model";
 
 const STORAGE_KEY = "linkboard:v1";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 

@@ -23,7 +23,7 @@ function jsonResponse(body: unknown, status = 200, contentType = "application/js
 
 function mockFetch(implementation: () => Promise<Response>) {
   const fetchMock = vi.fn(implementation);
-  globalThis.fetch = fetchMock as unknown as typeof fetch;
+  globalThis.fetch = fetchMock;
   return fetchMock;
 }
 
@@ -74,7 +74,8 @@ describe("fetchServerState", () => {
     const state = sampleState();
     const fetchMock = mockFetch(() => Promise.resolve(jsonResponse({ revision: 3, state })));
     expect(await fetchServerState()).toEqual({ revision: 3, state });
-    expect(fetchMock).toHaveBeenCalledWith("/api/state", { signal: expect.any(AbortSignal) });
+    const anyAbortSignal: unknown = expect.any(AbortSignal);
+    expect(fetchMock).toHaveBeenCalledWith("/api/state", { signal: anyAbortSignal });
   });
 
   it("returns snapshot with null state for an empty server", async () => {
