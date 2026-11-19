@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "./defined";
 import { exportBookmarksHtml, importBookmarksHtml } from "./bookmarks";
 import { makeBoard, makeCategory, makeItem, sampleState } from "./model";
 import { searchItems } from "./search";
@@ -121,9 +122,9 @@ describe("importBookmarksHtml", () => {
     ]);
     const reimported = importBookmarksHtml(exportBookmarksHtml([board]), "Again").boards;
     expect(reimported).toHaveLength(1);
-    expect(reimported[0]!.name).toBe("Mine");
-    expect(reimported[0]!.categories[0]!.name).toBe("A & B");
-    expect(reimported[0]!.categories[0]!.items[0]).toMatchObject({
+    expect(defined(reimported[0]).name).toBe("Mine");
+    expect(defined(defined(reimported[0]).categories[0]).name).toBe("A & B");
+    expect(defined(defined(reimported[0]).categories[0]).items[0]).toMatchObject({
       name: 'Quote "x" <y>',
       url: "https://a.example/?q=1&r=2",
       note: "note",
@@ -136,7 +137,7 @@ describe("parseState", () => {
     const state = sampleState();
     const restored = parseState(JSON.parse(JSON.stringify({ ...state, activeBoardId: "gone" })));
     expect(restored?.boards).toEqual(state.boards);
-    expect(restored?.activeBoardId).toBe(state.boards[0]!.id);
+    expect(restored?.activeBoardId).toBe(defined(state.boards[0]).id);
   });
 
   it.each([null, [], { version: 2, boards: [] }, { version: 1, boards: [] }, { version: 1, boards: [{ id: 1 }] }])(

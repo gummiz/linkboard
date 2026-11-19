@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { defined } from "./defined";
 import { hotItemIds, makeBoard, makeCategory, makeItem, normalizeUrl, type AppState } from "./model";
 import { activeBoard, reducer } from "./store";
 
@@ -15,7 +16,7 @@ function fixture() {
 }
 
 const names = (state: AppState, categoryIndex: number) =>
-  activeBoard(state).categories[categoryIndex]!.items.map((item) => item.name);
+  defined(activeBoard(state).categories[categoryIndex]).items.map((item) => item.name);
 
 describe("item/move", () => {
   it("moves an item down within a category, inserting before the target slot", () => {
@@ -67,7 +68,7 @@ describe("items", () => {
     next = reducer(next, { type: "item/update", boardId: board.id, itemId: d.id, patch: { name: "Dee", note: "hi" } });
     next = reducer(next, { type: "item/click", boardId: board.id, itemId: d.id });
     next = reducer(next, { type: "item/click", boardId: board.id, itemId: d.id });
-    const dee = activeBoard(next).categories[1]!.items[1]!;
+    const dee = defined(defined(activeBoard(next).categories[1]).items[1]);
     expect(dee).toMatchObject({ name: "Dee", note: "hi", clicks: 2 });
     next = reducer(next, { type: "item/delete", boardId: board.id, itemId: e.id });
     expect(names(next, 1)).toEqual(["Dee"]);
@@ -81,14 +82,14 @@ describe("boards", () => {
     const second = next.activeBoardId;
     next = reducer(next, { type: "board/delete", boardId: second });
     expect(next.boards).toHaveLength(1);
-    expect(next.activeBoardId).toBe(state.boards[0]!.id);
+    expect(next.activeBoardId).toBe(defined(state.boards[0]).id);
   });
 
   it("always keeps one board", () => {
     const { state, board } = fixture();
     const next = reducer(state, { type: "board/delete", boardId: board.id });
     expect(next.boards).toHaveLength(1);
-    expect(next.activeBoardId).toBe(next.boards[0]!.id);
+    expect(next.activeBoardId).toBe(defined(next.boards[0]).id);
     expect(next.activeBoardId).not.toBe(board.id);
   });
 });
@@ -108,6 +109,6 @@ describe("hotItemIds", () => {
   it("marks up to three most-clicked items above the threshold", () => {
     const items = [5, 0, 9, 3, 7, 2].map((clicks, index) => ({ ...makeItem(`${index}`, "https://x.example/"), clicks }));
     const hot = hotItemIds(makeCategory("c", "#000", items));
-    expect([...hot].map((id) => items.find((item) => item.id === id)!.clicks)).toEqual([9, 7, 5]);
+    expect([...hot].map((id) => defined(items.find((item) => item.id === id)).clicks)).toEqual([9, 7, 5]);
   });
 });

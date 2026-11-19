@@ -1,5 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { defined } from "./defined";
 import { ConflictDialog } from "./ConflictDialog";
 import { makeBoard, makeCategory, makeItem, type AppState } from "./model";
 
@@ -18,7 +19,7 @@ function stateWithLinks(boardCount: number, linksPerBoard: number): AppState {
       ],
     ),
   );
-  return { version: 1, boards, activeBoardId: boards[0]!.id };
+  return { version: 1, boards, activeBoardId: defined(boards[0]).id };
 }
 
 beforeAll(() => {
