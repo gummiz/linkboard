@@ -56,17 +56,28 @@ npm run test:e2e   # uses installed Chrome, or set CHROMIUM_PATH
 
 ## Run with Docker
 
-Builds the app and serves it with nginx at http://localhost:5173. The container
-restarts on its own whenever Docker runs; enable "Start Docker Desktop when you
-sign in" so it is up after a reboot.
+Builds the app and serves it with a small Node server at http://localhost:5173.
+Boards are stored in `data/linkboard.json` on the host, so every browser sees
+the same boards. The container restarts on its own whenever Docker runs; enable
+"Start Docker Desktop when you sign in" so it is up after a reboot.
 
 ```bash
 docker compose up -d --build   # build and start
 docker compose down            # stop
 ```
 
-Rerun the first command after code changes. Port 5173 matches the dev server on
-purpose: boards live in `localStorage`, which is tied to the address.
+Rerun the first command after code changes. Back up by copying
+`data/linkboard.json`.
+
+The port is bound to `127.0.0.1` only. There is no login, so don't publish it
+to your network. `npm start` outside Docker listens on all interfaces, also
+without a login, so run it only on a trusted machine (or use the compose file,
+which binds to `127.0.0.1`).
+
+Boards already in a browser's `localStorage` move into the file automatically
+the first time you open the app. If the browser and the file both hold
+different boards, a dialog asks which to keep. Without the server (`npm run dev`,
+`vite preview`, static hosting) the app still uses `localStorage` only.
 
 ## Layout
 
@@ -78,4 +89,8 @@ purpose: boards live in `localStorage`, which is tied to the address.
 | `src/bookmarks.ts` | Netscape bookmark file import and export |
 | `src/search.ts` | Cross-board search ranking |
 | `src/*.tsx` | React UI |
+| `server/server.ts` | HTTP handler: static files plus `GET`/`PUT /api/state` |
+| `server/stateFile.ts` | Atomic read and write of `data/linkboard.json` |
+| `server/main.ts` | Server entry: reads `LINKBOARD_DATA_DIR`, `PORT`, `DIST_DIR` |
 | `e2e/app.e2e.mjs` | Playwright browser test |
+| `e2e/sync.e2e.mjs` | Playwright test: two browsers sync through the server |

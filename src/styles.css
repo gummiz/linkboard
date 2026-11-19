@@ -649,3 +649,125 @@ a:focus-visible {
     flex: 1;
   }
 }
+
+.boot-loading {
+  margin: 20vh 0 0;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.conflict-dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 20px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.conflict-dialog::backdrop {
+  background: rgb(15 23 42 / 0.5);
+}
+
+.conflict-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.conflict-dialog-intro {
+  max-width: 60ch;
+  margin: 0 0 16px;
+  color: var(--text-muted);
+}
+
+.conflict-dialog-counts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  column-gap: 16px;
+  row-gap: 4px;
+  margin: 0 0 20px;
+}
+
+.conflict-dialog-counts dt {
+  color: var(--text-muted);
+}
+
+.conflict-dialog-counts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Too narrow for label and value side by side: stack each pair. */
+@media (max-width: 400px) {
+  .conflict-dialog-counts {
+    grid-template-columns: 1fr;
+    row-gap: 0;
+  }
+
+  .conflict-dialog-counts dd + dt {
+    margin-top: 8px;
+  }
+}
+
+.conflict-dialog-choices {
+  display: grid;
+  gap: 8px;
+}
+
+.conflict-choice {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.conflict-choice-title {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.conflict-choice-text {
+  color: var(--text-muted);
+}
+
+.conflict-choice:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.conflict-choice:focus-visible,
+.link-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.conflict-dialog-status {
+  margin: 12px 0 0;
+  color: var(--text);
+}
+
+.conflict-dialog-backup {
+  margin: 16px 0 0;
+  text-align: left;
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.link-button {
+  display: inline;
+  text-align: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-button:hover {
+  background: transparent;
+}

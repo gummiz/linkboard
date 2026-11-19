@@ -95,6 +95,9 @@ export function hotItemIds(category: Category, minClicks = 3, max = 3): Set<stri
   );
 }
 
+/** A state together with the server file revision it belongs to; `state` is null while the file does not exist yet. */
+export type RevisionedState<State extends AppState | null = AppState> = { revision: number; state: State };
+
 export function sampleState(): AppState {
   const board = makeBoard("My First Board", [
     makeCategory("Getting started", CATEGORY_COLORS[1], [
