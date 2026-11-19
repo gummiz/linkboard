@@ -89,7 +89,6 @@ function recordStorageStatus(status: StorageStatus) {
   for (const listener of storageListeners) listener();
 }
 
-/** Writes to localStorage and records whether the browser accepted it (private mode and quota can refuse). */
 export function saveState(state: AppState) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));

@@ -43,7 +43,6 @@ export function ConflictDialog({
   const addDescriptionId = useId();
   const browserLinkCount = countContents(browser).linkCount;
 
-  // Read during render: opening the dialog moves focus before any effect can read it.
   const elementFocusedBeforeOpen = useRef(document.activeElement);
 
   useEffect(() => {
