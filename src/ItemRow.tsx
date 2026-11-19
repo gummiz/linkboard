@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
+import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
 import { ITEM_MIME, URI_MIME } from "./dnd";
 import { Favicon } from "./Favicon";
 import { normalizeUrl, type Category, type Item } from "./model";
@@ -101,7 +101,7 @@ function ItemEditor({ item, categoryId, categories, onSave, onCancel, onDelete }
   const [target, setTarget] = useState(categoryId);
   const normalized = normalizeUrl(url);
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (normalized === null) return;
     onSave({ name: name.trim() || item.name, url: normalized, note: note.trim() }, target);

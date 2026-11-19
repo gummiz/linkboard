@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
+import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
 import { CATEGORY_MIME, firstUri, hasType, isLowerHalf, ITEM_MIME, URI_MIME } from "./dnd";
 import { ItemRow } from "./ItemRow";
 import {
@@ -36,7 +36,7 @@ export function CategoryCard(props: Props) {
   const hidden = category.showAll ? 0 : Math.max(0, category.items.length - VISIBLE_ITEM_LIMIT);
   const visible = category.collapsed ? [] : category.items.slice(0, category.items.length - hidden);
 
-  const addLink = (event: FormEvent) => {
+  const addLink = (event: SubmitEvent) => {
     event.preventDefault();
     const url = normalizeUrl(draft);
     if (url === null) {

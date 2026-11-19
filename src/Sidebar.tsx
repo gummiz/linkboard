@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type FormEvent } from "react";
+import { useState, type Dispatch, type SubmitEvent } from "react";
 import type { AppState } from "./model";
 import type { Action } from "./store";
 
@@ -6,7 +6,7 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
 
-  const submit = (event: FormEvent) => {
+  const submit = (event: SubmitEvent) => {
     event.preventDefault();
     const trimmed = name.trim();
     if (trimmed !== "") dispatch({ type: "board/add", name: trimmed });

@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
+import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
 import { CategoryCard } from "./CategoryCard";
 import { categoryColor, type Board } from "./model";
 import { CATEGORY_MIME, hasType, isLowerHalf } from "./dnd";
@@ -9,7 +9,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
   const [dropSlot, setDropSlot] = useState<number | null>(null);
   const linkCount = board.categories.reduce((total, category) => total + category.items.length, 0);
 
-  const addCategory = (event: FormEvent) => {
+  const addCategory = (event: SubmitEvent) => {
     event.preventDefault();
     const name = newCategory.trim();
     if (name === "") return;
