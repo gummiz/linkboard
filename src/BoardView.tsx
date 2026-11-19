@@ -1,6 +1,6 @@
 import { useState, type Dispatch, type DragEvent, type FormEvent } from "react";
 import { CategoryCard } from "./CategoryCard";
-import { CATEGORY_COLORS, type Board } from "./model";
+import { categoryColor, type Board } from "./model";
 import { CATEGORY_MIME, hasType, isLowerHalf } from "./dnd";
 import type { Action } from "./store";
 
@@ -13,7 +13,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
     event.preventDefault();
     const name = newCategory.trim();
     if (name === "") return;
-    const color = CATEGORY_COLORS[board.categories.length % CATEGORY_COLORS.length]!;
+    const color = categoryColor(board.categories.length);
     dispatch({ type: "category/add", boardId: board.id, name, color });
     setNewCategory("");
   };

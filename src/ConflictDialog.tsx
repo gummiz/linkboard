@@ -46,11 +46,12 @@ export function ConflictDialog({
   const elementFocusedBeforeOpen = useRef(document.activeElement);
 
   useEffect(() => {
-    const dialog = dialogRef.current!;
+    const dialog = dialogRef.current;
+    if (dialog === null) return;
+    const previous = elementFocusedBeforeOpen.current;
     // StrictMode runs this effect twice; showModal() on an open dialog can throw.
     if (!dialog.open) dialog.showModal();
     return () => {
-      const previous = elementFocusedBeforeOpen.current;
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, []);
