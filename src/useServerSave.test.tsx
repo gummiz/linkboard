@@ -27,7 +27,7 @@ function setup() {
     { initialProps: { state: localState } },
   );
   // Same as App: the action is tracked together with the dispatch that changes the state.
-  act(() => hook.result.current.track(renameAction));
+  act(() => { hook.result.current.track(renameAction); });
   hook.rerender({ state: renamedState });
   return { hook, replaceState, notify };
 }

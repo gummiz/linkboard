@@ -24,7 +24,7 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
               type="button"
               className={board.id === state.activeBoardId ? "board-link active" : "board-link"}
               aria-current={board.id === state.activeBoardId ? "page" : undefined}
-              onClick={() => dispatch({ type: "board/select", boardId: board.id })}
+              onClick={() => { dispatch({ type: "board/select", boardId: board.id }); }}
             >
               <span className="board-link-name">{board.name}</span>
               <span className="board-link-count">
@@ -39,15 +39,19 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
           <input
             autoFocus
             value={name}
-            onChange={(event) => setName(event.target.value)}
-            onBlur={() => name.trim() === "" && setAdding(false)}
-            onKeyDown={(event) => event.key === "Escape" && setAdding(false)}
+            onChange={(event) => { setName(event.target.value); }}
+            onBlur={() => {
+              if (name.trim() === "") setAdding(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") setAdding(false);
+            }}
             placeholder="Board name"
             aria-label="New board name"
           />
         </form>
       ) : (
-        <button type="button" className="add-board" onClick={() => setAdding(true)}>
+        <button type="button" className="add-board" onClick={() => { setAdding(true); }}>
           + New board
         </button>
       )}

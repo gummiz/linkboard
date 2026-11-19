@@ -62,7 +62,7 @@ export function ConflictDialog({
       aria-labelledby={titleId}
       aria-describedby={introId}
       // Esc must not dismiss an undecided state.
-      onCancel={(event) => event.preventDefault()}
+      onCancel={(event) => { event.preventDefault(); }}
     >
       <h2 id={titleId}>This browser has its own boards</h2>
       <p id={introId} className="conflict-dialog-intro">

@@ -93,7 +93,7 @@ export function useServerSave(options: UseServerSaveOptions): {
   useEffect(() => {
     if (!enabled || pendingActions.current.length === 0) return;
     const timer = setTimeout(() => void savePending(), SAVE_DEBOUNCE_MILLISECONDS);
-    return () => clearTimeout(timer);
+    return () => { clearTimeout(timer); };
   }, [enabled, state, savePending]);
 
   useEffect(() => {

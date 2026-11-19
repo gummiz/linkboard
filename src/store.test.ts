@@ -98,10 +98,9 @@ describe("normalizeUrl", () => {
     ["example.com", "https://example.com/"],
     ["  http://example.com/a?b=1 ", "http://example.com/a?b=1"],
     ["http://localhost:3000", "http://localhost:3000/"],
-  ])("accepts %s", (input, expected) => expect(normalizeUrl(input)).toBe(expected));
+  ])("accepts %s", (input, expected) => { expect(normalizeUrl(input)).toBe(expected); });
 
-  it.each(["", "javascript:alert(1)", "ftp://example.com", "not a url", "hello"])("rejects %j", (input) =>
-    expect(normalizeUrl(input)).toBeNull(),
+  it.each(["", "javascript:alert(1)", "ftp://example.com", "not a url", "hello"])("rejects %j", (input) => { expect(normalizeUrl(input)).toBeNull(); },
   );
 });
 

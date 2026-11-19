@@ -141,7 +141,7 @@ describe("parseState", () => {
 
   it.each([null, [], { version: 2, boards: [] }, { version: 1, boards: [] }, { version: 1, boards: [{ id: 1 }] }])(
     "rejects %j",
-    (value) => expect(parseState(value)).toBeNull(),
+    (value) => { expect(parseState(value)).toBeNull(); },
   );
 });
 

@@ -99,7 +99,7 @@ describe("ConflictDialog", () => {
     const handlers = { onUseFile: vi.fn(), onMerge: vi.fn(), onDownloadBrowser: vi.fn() };
     const { unmount } = render(<ConflictDialog file={stateWithLinks(1, 1)} browser={stateWithLinks(1, 1)} {...handlers} />);
     opener.remove();
-    expect(() => unmount()).not.toThrow();
+    expect(() => { unmount(); }).not.toThrow();
   });
 
   it("prevents Escape from dismissing the dialog", () => {

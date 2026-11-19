@@ -20,10 +20,10 @@ export function SearchBox({ state, dispatch }: { state: AppState; dispatch: Disp
       }
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => { window.removeEventListener("keydown", onKey); };
   }, []);
 
-  useEffect(() => setSelected(0), [query]);
+  useEffect(() => { setSelected(0); }, [query]);
 
   const open = (hit: SearchHit) => {
     dispatch({ type: "item/click", boardId: hit.board.id, itemId: hit.item.id });
@@ -52,7 +52,7 @@ export function SearchBox({ state, dispatch }: { state: AppState; dispatch: Disp
         ref={input}
         type="search"
         value={query}
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => { setQuery(event.target.value); }}
         onKeyDown={onKeyDown}
         placeholder="Search all boards  ( / )"
         aria-label="Search links"
@@ -71,7 +71,7 @@ export function SearchBox({ state, dispatch }: { state: AppState; dispatch: Disp
               role="option"
               aria-selected={index === selected}
               className={index === selected ? "selected" : undefined}
-              onMouseEnter={() => setSelected(index)}
+              onMouseEnter={() => { setSelected(index); }}
               onMouseDown={(event) => {
                 event.preventDefault();
                 open(hit);

@@ -25,7 +25,7 @@ export function ItemRow({ boardId, item, hot, categoryId, categories, dispatch, 
           item={item}
           categoryId={categoryId}
           categories={categories}
-          onCancel={() => setEditing(false)}
+          onCancel={() => { setEditing(false); }}
           onSave={(patch, toCategoryId) => {
             dispatch({ type: "item/update", boardId, itemId: item.id, patch });
             if (toCategoryId !== categoryId) {
@@ -40,7 +40,7 @@ export function ItemRow({ boardId, item, hot, categoryId, categories, dispatch, 
             }
             setEditing(false);
           }}
-          onDelete={() => dispatch({ type: "item/delete", boardId, itemId: item.id })}
+          onDelete={() => { dispatch({ type: "item/delete", boardId, itemId: item.id }); }}
         />
       </li>
     );
@@ -64,8 +64,10 @@ export function ItemRow({ boardId, item, hot, categoryId, categories, dispatch, 
         target="_blank"
         rel="noopener noreferrer"
         title={`${item.name}\n${item.url}`}
-        onClick={() => dispatch({ type: "item/click", boardId, itemId: item.id })}
-        onAuxClick={(event) => event.button === 1 && dispatch({ type: "item/click", boardId, itemId: item.id })}
+        onClick={() => { dispatch({ type: "item/click", boardId, itemId: item.id }); }}
+        onAuxClick={(event) => {
+          if (event.button === 1) dispatch({ type: "item/click", boardId, itemId: item.id });
+        }}
       >
         <Favicon url={item.url} name={item.name} />
         <span className="item-name">{item.name}</span>
@@ -75,7 +77,7 @@ export function ItemRow({ boardId, item, hot, categoryId, categories, dispatch, 
           </span>
         )}
       </a>
-      <button type="button" className="icon-button edit" aria-label={`Edit ${item.name}`} onClick={() => setEditing(true)}>
+      <button type="button" className="icon-button edit" aria-label={`Edit ${item.name}`} onClick={() => { setEditing(true); }}>
         ✎
       </button>
       {item.note !== "" && <p className="item-note">{item.note}</p>}
@@ -106,22 +108,24 @@ function ItemEditor({ item, categoryId, categories, onSave, onCancel, onDelete }
   };
 
   return (
-    <form className="item-editor" onSubmit={submit} onKeyDown={(event) => event.key === "Escape" && onCancel()}>
+    <form className="item-editor" onSubmit={submit} onKeyDown={(event) => {
+        if (event.key === "Escape") onCancel();
+      }}>
       <label>
         Name
-        <input autoFocus value={name} onChange={(event) => setName(event.target.value)} />
+        <input autoFocus value={name} onChange={(event) => { setName(event.target.value); }} />
       </label>
       <label>
         URL
-        <input value={url} onChange={(event) => setUrl(event.target.value)} aria-invalid={normalized === null} />
+        <input value={url} onChange={(event) => { setUrl(event.target.value); }} aria-invalid={normalized === null} />
       </label>
       <label>
         Note
-        <textarea rows={2} value={note} onChange={(event) => setNote(event.target.value)} />
+        <textarea rows={2} value={note} onChange={(event) => { setNote(event.target.value); }} />
       </label>
       <label>
         Category
-        <select value={target} onChange={(event) => setTarget(event.target.value)}>
+        <select value={target} onChange={(event) => { setTarget(event.target.value); }}>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}

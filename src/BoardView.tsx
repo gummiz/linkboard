@@ -52,7 +52,9 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
               dispatch({ type: "board/update", boardId: board.id, patch: { name } });
             } else event.target.value = board.name;
           }}
-          onKeyDown={(event) => event.key === "Enter" && event.currentTarget.blur()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") event.currentTarget.blur();
+          }}
         />
         <span className="board-meta">
           {board.categories.length} categories · {linkCount} links
@@ -60,7 +62,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
         <form className="add-category" onSubmit={addCategory}>
           <input
             value={newCategory}
-            onChange={(event) => setNewCategory(event.target.value)}
+            onChange={(event) => { setNewCategory(event.target.value); }}
             placeholder="New category"
             aria-label="New category name"
           />
@@ -74,7 +76,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
       {board.categories.length === 0 ? (
         <p className="empty-board">This board is empty. Add a category to start collecting links.</p>
       ) : (
-        <div className="columns" onDragLeave={() => setDropSlot(null)}>
+        <div className="columns" onDragLeave={() => { setDropSlot(null); }}>
           {board.categories.map((category, index) => (
             <CategoryCard
               key={category.id}
@@ -86,7 +88,7 @@ export function BoardView({ board, dispatch }: { board: Board; dispatch: Dispatc
               dropAfter={dropSlot === index + 1 && index === board.categories.length - 1}
               onCategoryDragOver={categoryDragOver(index)}
               onCategoryDrop={categoryDrop}
-              onCategoryDragEnd={() => setDropSlot(null)}
+              onCategoryDragEnd={() => { setDropSlot(null); }}
             />
           ))}
         </div>

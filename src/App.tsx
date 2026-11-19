@@ -34,7 +34,7 @@ export function App({ initial }: { initial: InitialLoad }) {
     enabled: initial.mode === "server" && conflict === null,
     initialRevision: initial.mode === "server" ? initial.revision : 0,
     state,
-    replaceState: (replacement) => dispatch({ type: "state/replace", state: replacement }),
+    replaceState: (replacement) => { dispatch({ type: "state/replace", state: replacement }); },
     notify: setNotice,
   });
 
@@ -52,8 +52,8 @@ export function App({ initial }: { initial: InitialLoad }) {
 
   useEffect(() => {
     if (notice === null) return;
-    const timer = setTimeout(() => setNotice(null), 5000);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => { setNotice(null); }, 5000);
+    return () => { clearTimeout(timer); };
   }, [notice]);
 
   const onImport = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -155,20 +155,19 @@ export function App({ initial }: { initial: InitialLoad }) {
             <div className="menu-panel">
               <button
                 type="button"
-                onClick={() => download("bookmarks.html", exportBookmarksHtml(state.boards), "text/html")}
+                onClick={() => { download("bookmarks.html", exportBookmarksHtml(state.boards), "text/html"); }}
               >
                 All boards as browser bookmarks (.html)
               </button>
               <button
                 type="button"
-                onClick={() => download("linkboard-backup.json", JSON.stringify(state, null, 2), "application/json")}
+                onClick={() => { download("linkboard-backup.json", JSON.stringify(state, null, 2), "application/json"); }}
               >
                 Full backup (.json)
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  download(`${board.name}.linkboard.json`, JSON.stringify(board, null, 2), "application/json")
+                onClick={() => { download(`${board.name}.linkboard.json`, JSON.stringify(board, null, 2), "application/json"); }
                 }
               >
                 This board, to share (.json)
@@ -192,8 +191,7 @@ export function App({ initial }: { initial: InitialLoad }) {
             setConflict(null);
           }}
           onMerge={() => void onMerge()}
-          onDownloadBrowser={() =>
-            download("linkboard-backup.json", JSON.stringify(conflict.browser, null, 2), "application/json")
+          onDownloadBrowser={() => { download("linkboard-backup.json", JSON.stringify(conflict.browser, null, 2), "application/json"); }
           }
         />
       )}

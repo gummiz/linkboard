@@ -35,7 +35,7 @@ function readBody(request: http.IncomingMessage): Promise<string | null> {
       receivedBytes += chunk.length;
       if (receivedBytes <= MAX_BODY_BYTES) chunks.push(chunk);
     });
-    request.on("end", () => resolve(receivedBytes > MAX_BODY_BYTES ? null : Buffer.concat(chunks).toString("utf8")));
+    request.on("end", () => { resolve(receivedBytes > MAX_BODY_BYTES ? null : Buffer.concat(chunks).toString("utf8")); });
     request.on("error", reject);
   });
 }
@@ -117,7 +117,7 @@ export function createLinkboardServer({ dataDir, distDir: distDirOption }: Optio
     const url = new URL(request.url ?? "/", "http://localhost");
     if (url.pathname === "/api/state" && request.method === "GET") return handleGetState(response);
     if (url.pathname === "/api/state" && request.method === "PUT") return handlePutState(request, response);
-    if (url.pathname.startsWith("/api/")) return sendJson(response, 404, { error: "Not found" });
+    if (url.pathname.startsWith("/api/")) { sendJson(response, 404, { error: "Not found" }); return; }
     return handleStatic(url, response);
   }
 
