@@ -2,6 +2,7 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 import { sampleState } from "./model";
+import { saveState } from "./storage";
 
 const NOTICE = "This browser is not saving changes (storage is blocked or full).";
 
@@ -30,6 +31,8 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  stubLocalStorage();
+  saveState(sampleState());
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -52,6 +55,12 @@ describe("storage failure notice", () => {
 
     storage.blocked = false;
     addBoard("Third");
+    expect(screen.queryByRole("status")).toBeNull();
+  });
+
+  it("stays hidden in server mode, where the server keeps the changes", () => {
+    stubLocalStorage().blocked = true;
+    render(<App initial={{ mode: "server", revision: 1, state: sampleState() }} />);
     expect(screen.queryByRole("status")).toBeNull();
   });
 

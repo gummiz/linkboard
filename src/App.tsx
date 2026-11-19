@@ -32,7 +32,8 @@ export function App({ initial }: { initial: InitialLoad }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const storageStatus = useSyncExternalStore(subscribeStorageStatus, getStorageStatus);
   const board = activeBoard(state);
-  const visibleNotice = notice ?? (storageStatus === "failing" ? STORAGE_FAILING_NOTICE : null);
+  const localSaveFailing = initial.mode === "local" && storageStatus === "failing";
+  const visibleNotice = notice ?? (localSaveFailing ? STORAGE_FAILING_NOTICE : null);
 
   const { track, saveImmediately } = useServerSave({
     enabled: initial.mode === "server" && conflict === null,
