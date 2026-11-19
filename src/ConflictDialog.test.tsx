@@ -50,6 +50,19 @@ describe("ConflictDialog", () => {
     expect(screen.getByText(/This browser's 3 links are discarded\./)).toBeTruthy();
   });
 
+  it("uses a singular verb for a single discarded link", () => {
+    render(
+      <ConflictDialog
+        file={stateWithLinks(1, 2)}
+        browser={stateWithLinks(1, 1)}
+        onUseFile={vi.fn()}
+        onMerge={vi.fn()}
+        onDownloadBrowser={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/This browser's 1 link is discarded\./)).toBeTruthy();
+  });
+
   it("calls the matching handler for each button", () => {
     const handlers = renderDialog();
     fireEvent.click(screen.getByRole("button", { name: "Save a backup of this browser's boards first" }));

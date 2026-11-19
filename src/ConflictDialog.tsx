@@ -87,7 +87,8 @@ export function ConflictDialog({
         >
           <span className="conflict-choice-title">Keep the shared boards</span>
           <span id={keepDescriptionId} className="conflict-choice-text">
-            This browser's {browserLinkCount === 0 ? "boards" : pluralize(browserLinkCount, "link")} are discarded. The
+            This browser's {browserLinkCount === 0 ? "boards" : pluralize(browserLinkCount, "link")}{" "}
+            {browserLinkCount === 1 ? "is" : "are"} discarded. The
             shared boards stay as they are.
           </span>
         </button>
