@@ -1,10 +1,15 @@
-import { useState, type Dispatch, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type Dispatch, type SubmitEvent } from "react";
 import type { AppState } from "./model";
 import type { Action } from "./store";
 
 export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispatch<Action> }) {
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState("");
+  const nameInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (adding) nameInput.current?.focus();
+  }, [adding]);
 
   const submit = (event: SubmitEvent) => {
     event.preventDefault();
@@ -37,7 +42,7 @@ export function Sidebar({ state, dispatch }: { state: AppState; dispatch: Dispat
       {adding ? (
         <form onSubmit={submit} className="inline-form">
           <input
-            autoFocus
+            ref={nameInput}
             value={name}
             onChange={(event) => { setName(event.target.value); }}
             onBlur={() => {

@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type DragEvent, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type Dispatch, type DragEvent, type KeyboardEvent, type SubmitEvent } from "react";
 import { ITEM_MIME, URI_MIME } from "./dnd";
 import { Favicon } from "./Favicon";
 import { normalizeUrl, type Category, type Item } from "./model";
@@ -101,6 +101,16 @@ function ItemEditor({ item, categoryId, categories, onSave, onCancel, onDelete }
   const [target, setTarget] = useState(categoryId);
   const normalized = normalizeUrl(url);
 
+  const nameInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    nameInput.current?.focus();
+  }, []);
+
+  const cancelOnEscape = (event: KeyboardEvent) => {
+    if (event.key === "Escape") onCancel();
+  };
+
   const submit = (event: SubmitEvent) => {
     event.preventDefault();
     if (normalized === null) return;
@@ -108,24 +118,37 @@ function ItemEditor({ item, categoryId, categories, onSave, onCancel, onDelete }
   };
 
   return (
-    <form className="item-editor" onSubmit={submit} onKeyDown={(event) => {
-        if (event.key === "Escape") onCancel();
-      }}>
+    <form className="item-editor" onSubmit={submit}>
       <label>
         Name
-        <input autoFocus value={name} onChange={(event) => { setName(event.target.value); }} />
+        <input
+          ref={nameInput}
+          value={name}
+          onChange={(event) => { setName(event.target.value); }}
+          onKeyDown={cancelOnEscape}
+        />
       </label>
       <label>
         URL
-        <input value={url} onChange={(event) => { setUrl(event.target.value); }} aria-invalid={normalized === null} />
+        <input
+          value={url}
+          onChange={(event) => { setUrl(event.target.value); }}
+          onKeyDown={cancelOnEscape}
+          aria-invalid={normalized === null}
+        />
       </label>
       <label>
         Note
-        <textarea rows={2} value={note} onChange={(event) => { setNote(event.target.value); }} />
+        <textarea
+          rows={2}
+          value={note}
+          onChange={(event) => { setNote(event.target.value); }}
+          onKeyDown={cancelOnEscape}
+        />
       </label>
       <label>
         Category
-        <select value={target} onChange={(event) => { setTarget(event.target.value); }}>
+        <select value={target} onChange={(event) => { setTarget(event.target.value); }} onKeyDown={cancelOnEscape}>
           {categories.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -134,13 +157,13 @@ function ItemEditor({ item, categoryId, categories, onSave, onCancel, onDelete }
         </select>
       </label>
       <div className="editor-actions">
-        <button type="submit" className="primary" disabled={normalized === null}>
+        <button type="submit" className="primary" disabled={normalized === null} onKeyDown={cancelOnEscape}>
           Save
         </button>
-        <button type="button" onClick={onCancel}>
+        <button type="button" onClick={onCancel} onKeyDown={cancelOnEscape}>
           Cancel
         </button>
-        <button type="button" className="danger subtle" onClick={onDelete}>
+        <button type="button" className="danger subtle" onClick={onDelete} onKeyDown={cancelOnEscape}>
           Delete
         </button>
       </div>

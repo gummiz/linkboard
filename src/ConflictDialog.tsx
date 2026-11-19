@@ -36,13 +36,14 @@ export function ConflictDialog({
   onDownloadBrowser,
 }: ConflictDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const keepButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
   const introId = useId();
   const keepDescriptionId = useId();
   const addDescriptionId = useId();
   const browserLinkCount = countContents(browser).linkCount;
 
-  // Read during render: autoFocus on a child moves focus before any effect runs.
+  // Read during render: opening the dialog moves focus before any effect can read it.
   const elementFocusedBeforeOpen = useRef(document.activeElement);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export function ConflictDialog({
     const previous = elementFocusedBeforeOpen.current;
     // StrictMode runs this effect twice; showModal() on an open dialog can throw.
     if (!dialog.open) dialog.showModal();
+    keepButton.current?.focus();
     return () => {
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
@@ -80,7 +82,7 @@ export function ConflictDialog({
         <button
           type="button"
           className="conflict-choice"
-          autoFocus
+          ref={keepButton}
           aria-label="Keep the shared boards"
           aria-describedby={keepDescriptionId}
           disabled={busy}

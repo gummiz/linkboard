@@ -169,8 +169,9 @@ export function App({ initial }: { initial: InitialLoad }) {
               </button>
               <button
                 type="button"
-                onClick={() => { download(`${board.name}.linkboard.json`, JSON.stringify(board, null, 2), "application/json"); }
-                }
+                onClick={() => {
+                  download(`${board.name}.linkboard.json`, JSON.stringify(board, null, 2), "application/json");
+                }}
               >
                 This board, to share (.json)
               </button>
@@ -193,8 +194,9 @@ export function App({ initial }: { initial: InitialLoad }) {
             setConflict(null);
           }}
           onMerge={() => void onMerge()}
-          onDownloadBrowser={() => { download("linkboard-backup.json", JSON.stringify(conflict.browser, null, 2), "application/json"); }
-          }
+          onDownloadBrowser={() => {
+            download("linkboard-backup.json", JSON.stringify(conflict.browser, null, 2), "application/json");
+          }}
         />
       )}
       {notice !== null && (
